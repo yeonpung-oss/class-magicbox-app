@@ -1,0 +1,3904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎪 교실 매직박스</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg:     #050a18; --card:   #0f1a30; --card2:  #142040; --border: #1c2d4f;
+      --gold:   #ffd700; --gold-d: #a07800; --cyan:   #00e5ff; --cyan-d: #007a8a;
+      --txt:    #d8e0f0; --txt2:   #6a7fa8;
+      --male:   #4fc3f7; --female: #c084fc; --green:  #4caf50; --red: #ef5350;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--txt); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none;
+      background: radial-gradient(ellipse 60% 40% at 15% 20%, rgba(0,229,255,.04) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 35% at 85% 75%, rgba(255,215,0,.04) 0%, transparent 60%);
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: linear-gradient(180deg, #080f22 0%, #0a1428 100%);
+      border-bottom: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0,0,0,.6);
+      padding: 14px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    /* ── Class Bar ── */
+    .class-bar {
+      display: flex; align-items: center; gap: 6px; margin-left: auto;
+      border-left: 1px solid var(--border); padding-left: 18px;
+    }
+    .class-bar-lbl { font-size: 11px; color: var(--txt2); font-weight: 700; letter-spacing: .5px; white-space: nowrap; }
+    .class-bar select {
+      background: rgba(0,0,0,.45); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--txt); font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700;
+      padding: 7px 10px; min-width: 80px; outline: none; cursor: pointer; transition: border-color .15s;
+    }
+    .class-bar select:focus { border-color: var(--cyan-d); }
+    .class-bar select option { background: #0f1a30; }
+    .cb-btn {
+      padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent;
+      color: var(--txt2); font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .15s; white-space: nowrap; line-height: 1;
+    }
+    .cb-btn:hover { border-color: var(--cyan-d); color: var(--cyan); }
+    .cb-btn.cb-del:hover { border-color: rgba(239,83,80,.4); color: var(--red); }
+    .title {
+      font-family: 'Black Han Sans', sans-serif; font-size: 26px;
+      background: linear-gradient(120deg, var(--gold) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      filter: drop-shadow(0 0 8px rgba(255,215,0,.35)); white-space: nowrap;
+    }
+    .tabs { display: flex; gap: 6px; }
+    .tab-btn {
+      padding: 9px 22px; border: 1px solid var(--border); border-radius: 8px; background: transparent;
+      color: var(--txt2); font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all .18s;
+    }
+    .tab-btn:hover { border-color: var(--cyan-d); color: var(--cyan); }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(255,215,0,.07));
+      border-color: var(--cyan); color: var(--cyan);
+      box-shadow: 0 0 14px rgba(0,229,255,.18), inset 0 0 12px rgba(0,229,255,.06);
+    }
+
+    /* ── Layout ── */
+    main { position: relative; z-index: 1; padding: 10px 14px; flex: 1; min-height: 0; overflow: hidden; }
+    .tab-pane { display: none; height: 100%; } .tab-pane.active { display: flex; flex-direction: column; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; }
+    .card-title { font-size: 14px; font-weight: 900; color: var(--gold); letter-spacing: .5px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .right-stack { display: flex; flex-direction: column; gap: 14px; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+    /* ── Seat tab ── */
+    .seat-tab-layout { display: grid; grid-template-columns: 1fr 270px; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; }
+    .seat-tab-layout > .card:first-child { overflow: auto; display: flex; flex-direction: column; min-height: 0; }
+    .seat-tab-layout > .right-stack { flex-direction: column; overflow-y: auto; min-height: 0; gap: 10px; }
+    .classroom-wrapper { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+    .teacher-desk {
+      padding: 9px 56px; background: linear-gradient(135deg, rgba(255,215,0,.1), rgba(255,215,0,.04));
+      border: 2px solid var(--gold-d); border-radius: 8px; color: var(--gold);
+      font-weight: 900; font-size: 13px; letter-spacing: 3px; box-shadow: 0 0 18px rgba(255,215,0,.15);
+    }
+    .seat-grid { display: grid; gap: 9px; }
+    .seat {
+      width: 82px; height: 72px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--card2); display: flex; flex-direction: column; align-items: center;
+      justify-content: center; cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .seat:hover { background: #1c2e52; border-color: var(--cyan-d); box-shadow: 0 0 10px rgba(0,229,255,.12); }
+    .seat .sn { font-size: 20px; font-weight: 900; color: var(--txt); line-height: 1; }
+    .seat .sl { font-size: 10px; color: var(--txt2); margin-top: 2px; }
+    .seat.off { background: rgba(5,10,24,.8); border: 1px dashed #1a2540; cursor: default; }
+    .seat.off:hover { background: rgba(5,10,24,.8); border-color: #1a2540; box-shadow: none; }
+    .seat.off .sn, .seat.off .sl { color: #1e2840; }
+    .seat .s-name { font-size: 14px; font-weight: 900; color: var(--txt); line-height: 1.2; text-align: center; padding: 0 4px; }
+    .seat .s-info { font-size: 10px; color: var(--txt2); margin-top: 3px; }
+    .seat-m  { background: rgba(79,195,247,.09)  !important; border-color: rgba(79,195,247,.35)  !important; }
+    .seat-f  { background: rgba(192,132,252,.09) !important; border-color: rgba(192,132,252,.35) !important; }
+    .seat-m:hover { background: rgba(79,195,247,.16)  !important; }
+    .seat-f:hover { background: rgba(192,132,252,.16) !important; }
+    .seat-pinned { border-color: var(--gold) !important; box-shadow: 0 0 12px rgba(255,215,0,.3), inset 0 0 8px rgba(255,215,0,.05) !important; }
+    .pin-mode .seat:not(.off) { border-style: dashed !important; cursor: crosshair !important; }
+    .pin-mode .seat.seat-pinned { border-style: solid !important; }
+    .pin-mode .seat:not(.off):hover { border-color: var(--gold) !important; border-style: solid !important; }
+    @keyframes seat-reveal {
+      0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+      65%  { transform: scale(1.12) rotate(3deg);  opacity: 1; }
+      100% { transform: scale(1) rotate(0);        opacity: 1; }
+    }
+    .seat.reveal { animation: seat-reveal .42s cubic-bezier(.34,1.4,.64,1) forwards; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid rgba(28,45,79,.5); }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-val { font-weight: 700; }
+    .mode-grp { display: flex; flex-direction: column; gap: 5px; }
+    .mode-btn {
+      padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent;
+      color: var(--txt2); font-family: 'Noto Sans KR', sans-serif; font-size: 12px; font-weight: 700;
+      cursor: pointer; text-align: left; transition: all .15s;
+    }
+    .mode-btn:hover { border-color: var(--cyan-d); color: var(--txt); }
+    .mode-btn.active { background: rgba(0,229,255,.1); border-color: var(--cyan); color: var(--cyan); }
+
+    /* ── Group Canvas (Stage 4) ── */
+    #group-canvas { display:block; border-radius:10px; border:1px solid var(--border); background:#060c1e; cursor:default; touch-action:none; }
+    .group-cfg-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:13px; font-weight:700; }
+    .num-ctrl { display:flex; align-items:center; gap:8px; }
+    .num-ctrl button { width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:var(--card2); color:var(--txt); font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; font-family:monospace; }
+    .num-ctrl button:hover { border-color:var(--cyan-d); color:var(--cyan); }
+    .num-ctrl .num-val { font-size:16px; font-weight:900; color:var(--cyan); min-width:24px; text-align:center; }
+    .preset-btns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .preset-btn { padding:9px 6px; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--txt2); font-family:'Noto Sans KR',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+    .preset-btn:hover { border-color:var(--cyan-d); color:var(--cyan); background:rgba(0,229,255,.05); }
+    .sep-list { display:flex; flex-direction:column; gap:6px; max-height:130px; overflow-y:auto; }
+    .sep-item { display:flex; align-items:center; gap:6px; font-size:12px; padding:3px 0; border-bottom:1px solid rgba(28,45,79,.4); }
+    .sep-item:last-child { border-bottom:none; }
+
+    input[type=range] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--border); border-radius: 2px; outline: none; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px rgba(0,229,255,.5); cursor: pointer; }
+    .btn-shuffle { font-size: 18px !important; padding: 16px !important; letter-spacing: 1px; position: relative; overflow: hidden; }
+    .btn-shuffle::after { content: ''; position: absolute; inset: 0; background: linear-gradient(45deg, transparent 35%, rgba(255,255,255,.12) 50%, transparent 65%); transform: translateX(-100%); transition: transform .5s; }
+    .btn-shuffle:hover::after { transform: translateX(100%); }
+    #pin-popup { position: fixed; z-index: 500; background: var(--card); border: 1px solid var(--gold); border-radius: 10px; padding: 10px; min-width: 158px; box-shadow: 0 0 20px rgba(255,215,0,.2), 0 8px 24px rgba(0,0,0,.6); display: none; }
+    .pp-title { font-size: 11px; color: var(--gold); font-weight: 900; margin-bottom: 6px; letter-spacing: .5px; }
+    .pp-item { padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .1s; display: flex; align-items: center; gap: 6px; }
+    .pp-item:hover { background: rgba(255,255,255,.08); }
+    .pp-clear { color: var(--red) !important; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 8px; }
+    .pp-current::after { content: ' 📌'; font-size: 11px; }
+
+    /* ── Stage 2 animation overlay ── */
+    #anim-overlay { display: none; position: fixed; inset: 0; z-index: 900; background: rgba(3,6,18,.97); flex-direction: column; align-items: center; justify-content: center; gap: 16px; opacity: 1; transition: opacity .4s; }
+    #cdwrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    #cd-num { font-family: 'Black Han Sans', sans-serif; font-size: 220px; line-height: 1; background: linear-gradient(135deg, var(--gold), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; filter: drop-shadow(0 0 40px rgba(255,215,0,.5)); }
+    @keyframes cdpop { 0%{transform:scale(2.8);opacity:0} 55%{transform:scale(.88);opacity:1} 75%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+    .cd-anim { animation: cdpop .48s cubic-bezier(.34,1.3,.64,1); }
+    #cd-lbl { font-size: 20px; font-weight: 700; color: var(--txt2); letter-spacing: 4px; }
+    #sfwrap { display: none; flex-direction: column; align-items: center; gap: 16px; }
+    #sf-cards { position: relative; width: 340px; height: 220px; }
+    .sf-card { position: absolute; padding: 7px 14px; border-radius: 8px; font-weight: 900; font-size: 14px; transform-origin: center; white-space: nowrap; }
+    .sf-card.sf-m { background: rgba(79,195,247,.15); color: var(--male); border: 1px solid rgba(79,195,247,.3); }
+    .sf-card.sf-f { background: rgba(192,132,252,.15); color: var(--female); border: 1px solid rgba(192,132,252,.3); }
+    #sf-lbl { font-size: 18px; font-weight: 700; color: var(--cyan); letter-spacing: 2px; animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+    #sf-bar-wrap { width: 320px; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+    #sf-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--gold)); border-radius: 3px; }
+    #confetti-canvas { position: fixed; inset: 0; z-index: 950; pointer-events: none; display: none; }
+
+    /* ── Pick tab (Stage 3) ── */
+    .pick-layout { display: grid; grid-template-columns: 1fr 240px; grid-template-rows: 1fr; gap: 12px; align-items: stretch; height: 100%; min-height: 0; overflow: hidden; }
+    .pick-layout > .card:first-child { display: flex; flex-direction: column; overflow: auto; min-height: 0; }
+    .pick-layout > .right-stack { overflow-y: auto; min-height: 0; }
+    #capsule-canvas { display: block; cursor: default; border-radius: 8px; align-self: center; }
+
+    /* ── Order tab (Pinball) ── */
+    .order-layout { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; align-items: start; }
+    .order-left { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; min-height: 0; }
+    .order-canvas-wrap { display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+    #order-canvas { border-radius: 12px; border: 1px solid rgba(0,229,255,.2); box-shadow: 0 0 40px rgba(0,229,255,.12), 0 0 80px rgba(0,229,255,.06); display: block; }
+    .order-result-item { display:flex; align-items:center; gap:8px; padding:6px 10px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:600; animation:pbSlideIn .22s ease-out; }
+    @keyframes pbSlideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
+    .order-rank { min-width:22px; height:22px; border-radius:50%; background:#080f22; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--txt2); flex-shrink:0; }
+    .order-rank.gold   { color:var(--gold);  border-color:rgba(255,215,0,.4);   background:rgba(255,215,0,.1); }
+    .order-rank.silver { color:#c4ccd6;       border-color:rgba(196,204,214,.4); background:rgba(196,204,214,.07); }
+    .order-rank.bronze { color:#d0905a;       border-color:rgba(208,144,90,.4);  background:rgba(208,144,90,.07); }
+    .order-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    #capsule-canvas.manual-mode { cursor: crosshair; }
+    .pick-controls { display: flex; gap: 10px; margin-top: 14px; }
+    .pick-controls .btn { flex: 1; }
+    #pick-hint { text-align: center; margin-top: 8px; min-height: 20px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .toggle-row input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--cyan); }
+    .history-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(28,45,79,.4); font-size: 13px; }
+    .history-item:last-child { border-bottom: none; }
+    .h-num { color: var(--txt2); font-size: 11px; min-width: 20px; }
+    .h-name { font-weight: 700; flex: 1; }
+    .h-time { color: var(--txt2); font-size: 11px; }
+    #pick-roster-table th { color: var(--txt2); font-size: 11px; font-weight: 600; padding: 3px 4px; border-bottom: 1px solid rgba(28,45,79,.6); text-align: left; }
+    #pick-roster-table td { padding: 3px 4px; border-bottom: 1px solid rgba(28,45,79,.25); vertical-align: middle; }
+    #pick-roster-table tr:last-child td { border-bottom: none; }
+    #pick-roster-table tr:hover td { background: rgba(255,255,255,.04); }
+    .roster-num { font-weight: 700; color: var(--gold); min-width: 22px; display: inline-block; text-align: center; }
+    .roster-gender-m { color: var(--male); font-size: 11px; }
+    .roster-gender-f { color: var(--female); font-size: 11px; }
+    .roster-absent td { opacity: .35; }
+
+    /* ── Reveal overlay (Stage 3) ── */
+    #reveal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 800;
+      background: rgba(3,6,18,.95);
+      flex-direction: column; align-items: center; justify-content: center; gap: 0;
+    }
+    #reveal-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .rcap-wrap { width: 110px; height: 140px; position: relative; margin-bottom: 4px; }
+    .rcap-top, .rcap-bot {
+      width: 110px; height: 70px; position: absolute;
+      transition: transform .55s cubic-bezier(.34,1.4,.64,1);
+    }
+    .rcap-top { top: 0; border-radius: 55px 55px 0 0; }
+    .rcap-bot { bottom: 0; border-radius: 0 0 55px 55px; }
+    .rcap-open .rcap-top { transform: translateY(-32px) rotate(-12deg); }
+    .rcap-open .rcap-bot { transform: translateY(32px)  rotate(12deg);  }
+    @keyframes cap-pulse { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.3)} }
+    .rcap-wrap { animation: cap-pulse 1.2s ease-in-out infinite; }
+    #reveal-label { font-family: 'Black Han Sans', sans-serif; font-size: 32px; color: var(--gold); filter: drop-shadow(0 0 12px rgba(255,215,0,.5)); opacity: 0; transition: opacity .3s; }
+    #reveal-name {
+      font-family: 'Black Han Sans', sans-serif; font-size: 72px; line-height: 1;
+      background: linear-gradient(135deg, var(--gold), var(--cyan));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      filter: drop-shadow(0 0 24px rgba(255,215,0,.6)); opacity: 0;
+    }
+    #reveal-sub { font-size: 18px; color: var(--txt2); opacity: 0; transition: opacity .3s; }
+    @keyframes name-pop { 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.18);opacity:1} 80%{transform:scale(.97)} 100%{transform:scale(1);opacity:1} }
+    .name-pop { animation: name-pop .65s cubic-bezier(.34,1.4,.64,1) forwards !important; }
+    #reveal-close { margin-top: 12px; opacity: 0; transition: opacity .3s; }
+
+    /* ── Secret panel (legacy quick-pick) ── */
+    #secret-panel {
+      display: none; position: fixed; bottom: 80px; right: 20px; z-index: 1100;
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px 18px; min-width: 200px; box-shadow: 0 8px 32px rgba(0,0,0,.7);
+    }
+    #secret-panel .sp-label { font-size: 12px; color: var(--txt2); margin-bottom: 10px; font-weight: 700; letter-spacing: .3px; }
+    #sec-zone { position: fixed; bottom: 0; right: 0; width: 90px; height: 90px; z-index: 50; }
+
+    /* ── Pick Settings Panel ── */
+    .pick-card-head { display:flex; align-items:center; justify-content:space-between; position:relative; margin-bottom:14px; }
+    .pick-card-head .card-title { margin-bottom:0; }
+    .pick-settings-wrap { position:relative; }
+    #pick-settings-panel { position:absolute; top:32px; right:0; z-index:300; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 18px; min-width:230px; box-shadow:0 8px 32px rgba(0,0,0,.85); display:none; }
+    .ps-sec { margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(28,45,79,.4); }
+    .ps-sec:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+    .ps-sec-lbl { font-size:10px; font-weight:900; color:var(--txt2); letter-spacing:1px; margin-bottom:8px; }
+    .ps-row { display:flex; align-items:center; justify-content:space-between; padding:5px 0; font-size:13px; font-weight:700; gap:12px; }
+    .sw { position:relative; width:38px; height:20px; flex-shrink:0; }
+    .sw input { opacity:0; width:0; height:0; position:absolute; }
+    .sw-sl { position:absolute; inset:0; background:var(--border); border-radius:20px; cursor:pointer; transition:.25s; }
+    .sw-sl::before { content:''; position:absolute; width:14px; height:14px; left:3px; bottom:3px; background:var(--txt2); border-radius:50%; transition:.25s; }
+    .sw input:checked+.sw-sl { background:var(--cyan-d); }
+    .sw input:checked+.sw-sl::before { transform:translateX(18px); background:var(--cyan); }
+    .ps-row input[type=range] { width:90px; }
+
+    /* ── Secret Dashboard ── */
+    #_s7dash { display:none; position:fixed; inset:0; z-index:1200; background:rgba(3,6,18,.93); align-items:center; justify-content:center; }
+    #_s7inner { background:var(--card); border:1px solid rgba(35,40,60,.8); border-radius:16px; width:100%; max-width:380px; overflow:hidden; box-shadow:0 24px 80px rgba(0,0,0,.9); }
+    .sd-head { padding:14px 20px; background:linear-gradient(135deg,#080e1a,#0c1422); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .sd-title { font-size:12px; font-weight:900; color:#4a5060; letter-spacing:1.5px; }
+    .sd-body { padding:16px 20px; }
+    .sd-sec { margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(28,45,79,.35); }
+    .sd-sec:last-child { margin-bottom:0; padding-bottom:0; border-bottom:none; }
+    .sd-sec-lbl { font-size:10px; font-weight:900; color:var(--txt2); letter-spacing:1px; margin-bottom:10px; }
+    .sd-stat-row { display:flex; justify-content:space-between; font-size:12px; padding:3px 0; }
+    .sd-stat-row span:first-child { color:var(--txt2); }
+    .sd-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+    .sd-dot.on { background:var(--green); box-shadow:0 0 5px var(--green); }
+    .sd-dot.off { background:#252535; }
+    /* PIN modal */
+    #_p9modal { display:none; position:fixed; inset:0; z-index:1300; background:rgba(3,6,18,.96); align-items:center; justify-content:center; }
+    #_p9inner { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px 24px; text-align:center; min-width:268px; box-shadow:0 24px 80px rgba(0,0,0,.9); }
+    .pin-title { font-size:14px; font-weight:900; color:var(--txt2); margin-bottom:4px; }
+    .pin-sub { font-size:11px; color:var(--txt2); margin-bottom:20px; opacity:.7; }
+    .pin-dots { display:flex; gap:12px; justify-content:center; margin:0 0 20px; }
+    .pin-dot { width:14px; height:14px; border-radius:50%; border:2px solid var(--border); transition:all .15s; }
+    .pin-dot.on { background:var(--cyan); border-color:var(--cyan); box-shadow:0 0 8px rgba(0,229,255,.4); }
+    .pin-pad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .pk { padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--card2); color:var(--txt); font-size:18px; font-weight:700; cursor:pointer; transition:all .15s; font-family:monospace; }
+    .pk:hover { border-color:var(--cyan-d); background:rgba(0,229,255,.07); color:var(--cyan); }
+    .pk.wide { grid-column:span 3; font-size:13px; color:var(--txt2); }
+    .pk.wide:hover { color:var(--red); background:rgba(239,83,80,.07); border-color:rgba(239,83,80,.25); }
+    /* Teacher indicator */
+    #_td { position:fixed; bottom:5px; left:5px; width:5px; height:5px; border-radius:50%; background:transparent; z-index:9999; pointer-events:none; }
+    #_td.on { background:#303848; }
+    /* Keyboard secret pick HUD */
+    #_kb-hud {
+      display:none; position:fixed; top:10px; right:76px; z-index:9999;
+      background:rgba(3,6,18,.80); border:1px solid rgba(255,215,0,.18);
+      border-radius:7px; padding:4px 11px; font-size:12px; font-weight:700;
+      color:rgba(255,215,0,.50); pointer-events:none; font-family:monospace;
+      letter-spacing:2px; backdrop-filter:blur(3px);
+    }
+    /* Machine shake */
+    @keyframes mshake { 0%,100%{transform-origin:center bottom;transform:rotate(0) translateX(0)} 20%{transform:rotate(-2.8deg) translateX(-3px)} 65%{transform:rotate(2.8deg) translateX(3px)} }
+    /* Reveal overlay */
+    #reveal-overlay { backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px); }
+    #rev-spotlight { position:fixed; width:500px; height:500px; top:50%; left:50%; transform:translate(-50%,-50%); background:conic-gradient(rgba(255,215,0,.055) 25deg,transparent 25deg); border-radius:50%; opacity:0; pointer-events:none; transition:opacity .6s; z-index:0; }
+    @keyframes rot-cw { from{transform:translate(-50%,-50%) rotate(0deg)} to{transform:translate(-50%,-50%) rotate(360deg)} }
+    #rev-spotlight.on { opacity:1; animation:rot-cw 6s linear infinite; }
+    @keyframes typing-blink { 0%,100%{opacity:1}50%{opacity:0} }
+    .t-cursor::after { content:'|'; animation:typing-blink .45s infinite; }
+    /* Selecting stage glow */
+    @keyframes winner-glow { 0%,100%{filter:brightness(1) drop-shadow(0 0 0px #fff)} 50%{filter:brightness(1.5) drop-shadow(0 0 12px currentColor)} }
+
+    /* ── Management tab ── */
+    .mgmt-layout { display: grid; grid-template-columns: 1fr 360px; gap: 20px; align-items: start; }
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: rgba(0,229,255,.07); color: var(--cyan); font-size: 12px; font-weight: 900; padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); letter-spacing: .5px; white-space: nowrap; }
+    tbody td { padding: 9px 12px; font-size: 13px; border-bottom: 1px solid rgba(28,45,79,.4); }
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
+    tbody tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-m { background: rgba(79,195,247,.12); color: var(--male); border: 1px solid rgba(79,195,247,.25); }
+    .badge-f { background: rgba(192,132,252,.12); color: var(--female); border: 1px solid rgba(192,132,252,.25); }
+    .att-btn { padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid; background: transparent; font-family: 'Noto Sans KR', sans-serif; transition: all .15s; }
+    .att-btn.on  { color: var(--green); border-color: rgba(76,175,80,.3);  background: rgba(76,175,80,.1); }
+    .att-btn.off { color: var(--red);   border-color: rgba(239,83,80,.3);  background: rgba(239,83,80,.1); }
+    .ico-btn { padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--txt2); cursor: pointer; font-size: 13px; transition: all .15s; }
+    .ico-btn:hover { color: var(--txt); border-color: var(--txt2); }
+    .ico-btn.del:hover { color: var(--red); border-color: rgba(239,83,80,.35); }
+
+    /* ── Forms + Buttons ── */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field label { font-size: 12px; color: var(--txt2); font-weight: 700; letter-spacing: .3px; }
+    input[type=text], input[type=number], select, textarea {
+      background: rgba(0,0,0,.35); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--txt); font-family: 'Noto Sans KR', sans-serif; font-size: 14px;
+      padding: 9px 13px; width: 100%; transition: border-color .18s, box-shadow .18s; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--cyan-d); box-shadow: 0 0 0 2px rgba(0,229,255,.1); }
+    select option { background: #0f1a30; }
+    textarea { resize: vertical; min-height: 100px; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .18s; border: none; letter-spacing: .3px; }
+    .btn-full { width: 100%; } .btn-sm { padding: 7px 14px; font-size: 13px; }
+    .btn-cyan { background: linear-gradient(135deg, #006070, #004050); color: #b0f0ff; border: 1px solid var(--cyan-d); }
+    .btn-cyan:hover { background: linear-gradient(135deg, var(--cyan-d), #005060); box-shadow: 0 0 14px rgba(0,229,255,.25); color: #fff; }
+    .btn-gold { background: linear-gradient(135deg, #7a5c00, #5a4000); color: #ffe566; border: 1px solid var(--gold-d); }
+    .btn-gold:hover { background: linear-gradient(135deg, #a07800, #7a5c00); box-shadow: 0 0 14px rgba(255,215,0,.3); }
+    .btn-ghost { background: transparent; color: var(--txt2); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--txt); border-color: var(--txt2); }
+    .btn-row { display: flex; gap: 8px; }
+    .grid-row { display: flex; gap: 8px; align-items: flex-end; }
+    .grid-row .field { flex: 1; margin-bottom: 0; }
+    .empty { text-align: center; padding: 48px 20px; color: var(--txt2); }
+    .empty .em { font-size: 52px; margin-bottom: 14px; }
+    .nbadge { background: rgba(0,229,255,.1); border: 1px solid rgba(0,229,255,.2); color: var(--cyan); font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+    .inline-input { background: rgba(0,0,0,.5) !important; border: 1px solid var(--cyan-d) !important; padding: 4px 8px !important; width: 88px !important; font-size: 13px !important; }
+    .hint { font-size: 12px; color: var(--txt2); line-height: 1.7; }
+    .hint code { background: rgba(0,0,0,.4); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; font-family: monospace; color: var(--cyan); font-size: 11px; }
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; background: var(--card); border: 1px solid var(--cyan); border-radius: 10px; padding: 11px 20px; font-size: 14px; font-weight: 700; color: var(--cyan); box-shadow: 0 0 20px rgba(0,229,255,.2); transform: translateY(80px); opacity: 0; transition: all .25s cubic-bezier(.34,1.56,.64,1); pointer-events: none; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Seat Complete "짜잔" Overlay ── */
+    #seat-tada-overlay {
+      display:none; position:fixed; inset:0; z-index:970;
+      flex-direction:column; align-items:center; justify-content:center;
+      background:rgba(3,6,18,.93); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      cursor:pointer;
+    }
+    @keyframes st-rays-spin { from{transform:translate(-50%,-50%) rotate(0deg)} to{transform:translate(-50%,-50%) rotate(360deg)} }
+    #st-rays {
+      position:absolute; width:1100px; height:1100px; top:50%; left:50%;
+      background: conic-gradient(
+        rgba(255,215,0,.07) 0deg, transparent 25deg,
+        transparent 45deg, rgba(0,229,255,.05) 45deg,
+        rgba(0,229,255,.05) 65deg, transparent 65deg,
+        transparent 90deg, rgba(255,215,0,.06) 90deg,
+        rgba(255,215,0,.06) 115deg, transparent 115deg,
+        transparent 135deg, rgba(0,229,255,.04) 135deg,
+        rgba(0,229,255,.04) 160deg, transparent 160deg,
+        transparent 180deg, rgba(255,215,0,.07) 180deg,
+        rgba(255,215,0,.07) 205deg, transparent 205deg,
+        transparent 225deg, rgba(0,229,255,.05) 225deg,
+        rgba(0,229,255,.05) 250deg, transparent 250deg,
+        transparent 270deg, rgba(255,215,0,.06) 270deg,
+        rgba(255,215,0,.06) 295deg, transparent 295deg,
+        transparent 315deg, rgba(0,229,255,.04) 315deg,
+        rgba(0,229,255,.04) 340deg, transparent 340deg
+      );
+      border-radius:50%; pointer-events:none;
+      animation:st-rays-spin 10s linear infinite;
+    }
+    #st-inner {
+      position:relative; z-index:1;
+      display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center;
+    }
+    #st-emoji-row { font-size:72px; line-height:1; filter:drop-shadow(0 0 18px rgba(255,215,0,.6)); letter-spacing:12px; }
+    @keyframes st-tadain { 0%{transform:scale(0) rotate(-10deg);opacity:0} 55%{transform:scale(1.22) rotate(2deg);opacity:1} 75%{transform:scale(.97)} 100%{transform:scale(1);opacity:1} }
+    @keyframes st-shimmer { to{background-position:200% center} }
+    #st-banner {
+      font-family:'Black Han Sans',sans-serif; font-size:90px; line-height:1;
+      background:linear-gradient(120deg, var(--gold) 0%, var(--cyan) 40%, var(--gold) 80%);
+      background-size:200% auto;
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      filter:drop-shadow(0 0 40px rgba(255,215,0,.85));
+      opacity:0; transform:scale(0.3);
+    }
+    #st-banner.pop { animation:st-tadain .7s cubic-bezier(.34,1.45,.64,1) forwards; }
+    #st-banner.pop-done { opacity:1; transform:scale(1); animation:st-shimmer 2.5s linear infinite; }
+    #st-title {
+      font-family:'Black Han Sans',sans-serif; font-size:34px; color:var(--gold);
+      opacity:0; transform:translateY(16px); transition:opacity .45s, transform .45s;
+    }
+    #st-title.show { opacity:1; transform:none; }
+    #st-hint { font-size:16px; color:var(--txt2); opacity:0; transition:opacity .35s .3s; }
+    #st-hint.show { opacity:1; }
+    #st-close {
+      margin-top:6px; opacity:0; transition:opacity .3s .5s;
+      padding:12px 36px; border-radius:10px;
+      background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(255,215,0,.08));
+      border:1px solid rgba(0,229,255,.35); color:var(--cyan);
+      font-family:'Noto Sans KR',sans-serif; font-size:15px; font-weight:700; cursor:pointer;
+    }
+    #st-close.show { opacity:1; }
+    /* ── Print ── */
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      header, .right-stack, #toast, #anim-overlay, #confetti-canvas, #reveal-overlay, #secret-panel, #sec-zone { display: none !important; }
+      main { padding: 0 !important; }
+      .tab-pane { display: block !important; }
+      #tab-pick, #tab-manage, #tab-order { display: none !important; }
+      .card { background: #fff !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+      #group-canvas { border: none !important; width: 100% !important; }
+    }
+    @media (max-width: 900px) { .seat-tab-layout { grid-template-columns: 1fr; } .pick-layout { grid-template-columns: 1fr; } .order-layout { grid-template-columns: 1fr; } .mgmt-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { main { padding: 14px; } header { padding: 12px 16px; } .title { font-size: 20px; } .tab-btn { padding: 7px 14px; font-size: 13px; } .seat { width: 62px; height: 56px; } .seat .sn { font-size: 16px; } .seat .s-name { font-size: 12px; } }
+
+    /* ── Excel Upload ── */
+    .drag-zone {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 24px 14px;
+      text-align: center; cursor: pointer; transition: all .2s; background: rgba(0,0,0,.18);
+    }
+    .drag-zone:hover, .drag-zone.drag-over {
+      border-color: var(--cyan); background: rgba(0,229,255,.05);
+      box-shadow: 0 0 14px rgba(0,229,255,.12);
+    }
+    .dz-icon { font-size: 34px; margin-bottom: 6px; }
+    .dz-text { font-size: 13px; font-weight: 700; color: var(--txt); margin-bottom: 3px; }
+    .dz-sub  { font-size: 11px; color: var(--txt2); }
+
+    /* ── Excel Preview Modal ── */
+    #excel-preview-modal {
+      position: fixed; inset: 0; z-index: 700;
+      background: rgba(3,6,18,.92);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    #excel-preview-inner {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      width: 100%; max-width: 720px; max-height: 88vh;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+    }
+    .ep-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 20px 24px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .ep-title { font-size: 16px; font-weight: 900; color: var(--gold); margin-bottom: 4px; }
+    #ep-stats { text-align: right; font-size: 12px; line-height: 1.9; }
+    #ep-table-wrap { flex: 1; overflow-y: auto; padding: 0; }
+    .ep-table { width: 100%; border-collapse: collapse; }
+    .ep-table thead th {
+      background: rgba(0,229,255,.07); color: var(--cyan); font-size: 12px; font-weight: 900;
+      padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: left;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .ep-table tbody td { padding: 7px 10px; border-bottom: 1px solid rgba(28,45,79,.35); font-size: 13px; vertical-align: middle; }
+    .ep-table tbody tr:last-child td { border-bottom: none; }
+    .ep-table tbody tr.ep-error td { background: rgba(239,83,80,.06); }
+    .ep-table tbody tr.ep-dup   td { background: rgba(255,215,0,.05); }
+    .ep-name-in {
+      background: transparent; border: 1px solid transparent; border-radius: 6px;
+      color: var(--txt); font-family: 'Noto Sans KR', sans-serif; font-size: 13px;
+      padding: 3px 7px; width: 120px; transition: border-color .15s; outline: none;
+    }
+    .ep-gender-sel {
+      background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--txt); font-family: 'Noto Sans KR', sans-serif; font-size: 12px;
+      padding: 3px 6px; width: 76px; outline: none;
+    }
+    .ep-name-in:focus { border-color: var(--cyan-d); background: rgba(0,0,0,.3); }
+    .ep-gender-sel:focus { border-color: var(--cyan-d); }
+    .ep-gender-sel option { background: #0f1a30; }
+    #ep-dup-warn {
+      padding: 10px 24px; background: rgba(255,215,0,.07);
+      border-top: 1px solid rgba(255,215,0,.18); color: var(--gold); font-size: 13px; flex-shrink: 0;
+    }
+    .ep-footer {
+      display: flex; gap: 10px; padding: 16px 24px;
+      border-top: 1px solid var(--border); flex-shrink: 0; align-items: center;
+    }
+    .ep-footer-note { font-size: 12px; color: var(--txt2); flex: 1; }
+
+    /* ── Seat-level Gender Lock (Stage 5) ── */
+    #glock-mode-btn { width:100%; margin-top:10px; padding:7px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--txt2); font-family:'Noto Sans KR',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+    #glock-mode-btn:hover { border-color:var(--cyan-d); color:var(--cyan); }
+    #glock-mode-btn.active { background:rgba(0,229,255,.1); border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 10px rgba(0,229,255,.15); }
+    /* Secret mode weight section */
+    .sd-weight-row { display:flex; align-items:center; justify-content:space-between; font-size:12px; padding:3px 0; gap:8px; }
+    .sd-weight-row input[type=range] { width:80px; }
+    #_s7wstatus { font-size:11px; color:var(--gold); margin-top:5px; min-height:14px; }
+
+    /* ── Enhanced Pick Reveal (Stage 5) ── */
+    #reveal-name { font-size:100px !important; }
+    @keyframes winner-entrance { 0%{transform:scale(0) rotate(-8deg);opacity:0} 55%{transform:scale(1.28) rotate(2deg);opacity:1} 78%{transform:scale(.96)} 100%{transform:scale(1);opacity:1} }
+    .winner-entrance { animation:winner-entrance .78s cubic-bezier(.34,1.45,.64,1) forwards !important; }
+    @keyframes inner-shake { 0%,100%{transform:none} 15%{transform:translateX(-9px) rotate(-.6deg)} 30%{transform:translateX(9px) rotate(.6deg)} 48%{transform:translateX(-6px)} 64%{transform:translateX(6px)} 80%{transform:translateX(-2px)} }
+    .inner-shake { animation:inner-shake .55s ease; }
+    #reveal-flash { position:fixed; inset:0; z-index:850; background:#fff; opacity:0; pointer-events:none; }
+    /* 짜잔 tada banner */
+    #reveal-tada { font-family:'Black Han Sans',sans-serif; font-size:68px; text-align:center; color:var(--gold); filter:drop-shadow(0 0 32px rgba(255,215,0,1)) drop-shadow(0 0 64px rgba(255,215,0,.5)); opacity:0; transform:scale(0.3) translateY(30px); transition:none; pointer-events:none; letter-spacing:2px; }
+    @keyframes tada-bounce { 0%{transform:scale(1) translateY(0)} 20%{transform:scale(1.18) translateY(-12px) rotate(-2deg)} 50%{transform:scale(1.06) translateY(-4px) rotate(1deg)} 75%{transform:scale(0.97) translateY(2px)} 100%{transform:scale(1) translateY(0)} }
+    #reveal-tada.show { animation:tada-bounce .65s cubic-bezier(.34,1.3,.64,1); }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="reveal-flash"></div>
+
+<!-- ══ Seat Complete "짜잔" Overlay ══ -->
+<div id="seat-tada-overlay">
+  <div id="st-rays"></div>
+  <div id="st-inner">
+    <div id="st-emoji-row">🎉&nbsp;🏫&nbsp;🎊</div>
+    <div id="st-banner">✨ 짜잔! ✨</div>
+    <div id="st-title">자리 배치 완료!</div>
+    <div id="st-hint">새 자리로 이동해 주세요 🪑</div>
+    <button id="st-close" onclick="closeSeatTada()">확인 ✓</button>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="_td"></div>
+<div id="_kb-hud"></div>
+
+<!-- ══ PIN Modal ══ -->
+<div id="_p9modal">
+  <div id="_p9inner">
+    <div class="pin-title">🔒 교사 전용</div>
+    <div class="pin-sub" id="_p9sub">PIN 번호를 입력하세요</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-pad">
+      <button class="pk" onclick="_p9key('1')">1</button><button class="pk" onclick="_p9key('2')">2</button><button class="pk" onclick="_p9key('3')">3</button>
+      <button class="pk" onclick="_p9key('4')">4</button><button class="pk" onclick="_p9key('5')">5</button><button class="pk" onclick="_p9key('6')">6</button>
+      <button class="pk" onclick="_p9key('7')">7</button><button class="pk" onclick="_p9key('8')">8</button><button class="pk" onclick="_p9key('9')">9</button>
+      <button class="pk" onclick="_p9key('0')">0</button><button class="pk" onclick="_p9del()">⌫</button><button class="pk" onclick="_p9close()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Secret Dashboard ══ -->
+<div id="_s7dash">
+  <div id="_s7inner">
+    <div class="sd-head">
+      <div class="sd-title">TEACHER ONLY</div>
+      <button class="ico-btn" onclick="_s7close()" style="color:var(--txt2);">✕</button>
+    </div>
+    <div class="sd-body">
+      <div class="sd-sec">
+        <div class="sd-sec-lbl">발표 뽑기 조작</div>
+        <select id="_s7sel" style="width:100%;margin-bottom:10px;font-size:13px;"></select>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;">
+            <input type="radio" name="_s7mode" value="once" checked> 1회만
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;">
+            <input type="radio" name="_s7mode" value="keep"> 계속 유지
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+          <div style="font-size:12px;"><span class="sd-dot" id="_s7dot"></span><span id="_s7status">비활성</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="_s7apply()">적용</button>
+          <button class="btn btn-ghost btn-sm" onclick="_s7clear()">해제</button>
+        </div>
+      </div>
+      <div class="sd-sec">
+        <div class="sd-sec-lbl">뽑기 통계</div>
+        <div id="_s7stats" class="hint"></div>
+        <button class="btn btn-cyan btn-sm btn-full" style="margin-top:10px;" onclick="_s7recommend()">⚖️ 균등 추천 (최소 횟수)</button>
+      </div>
+      <div class="sd-sec">
+        <div class="sd-sec-lbl">확률 가중치 (소프트 조작)</div>
+        <div class="hint" style="font-size:10px;opacity:.6;margin-bottom:8px;">선택 학생의 뽑힐 확률을 배수로 높입니다 (완전 강제 아님)</div>
+        <select id="_s7wsel" style="width:100%;margin-bottom:8px;font-size:13px;"></select>
+        <div class="sd-weight-row">
+          <span>배율: <strong id="_s7wval" style="color:var(--gold)">3</strong>x</span>
+          <input type="range" id="_s7wslider" min="1" max="10" value="3" oninput="_s7wUpd(this.value)">
+        </div>
+        <div class="btn-row" style="margin-top:8px;">
+          <button class="btn btn-gold btn-sm" style="flex:1;" onclick="_s7wapply()">가중치 적용</button>
+          <button class="btn btn-ghost btn-sm" onclick="_s7wclear()">해제</button>
+        </div>
+        <div id="_s7wstatus"></div>
+      </div>
+      <div class="sd-sec">
+        <div class="sd-sec-lbl">PIN 변경</div>
+        <div class="btn-row">
+          <input type="password" id="_s7newpin" maxlength="4" placeholder="새 PIN (4자리)" style="flex:1;font-size:13px;letter-spacing:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="_s7changePin()">변경</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Stage 2: Seat shuffle overlay -->
+<div id="anim-overlay">
+  <div id="cdwrap"><div id="cd-num">3</div><div id="cd-lbl">자리 바꿀 준비!</div></div>
+  <div id="sfwrap">
+    <div id="sf-cards"></div>
+    <div id="sf-lbl">🔀 자리를 섞는 중...</div>
+    <div id="sf-bar-wrap"><div id="sf-bar"></div></div>
+  </div>
+</div>
+
+<!-- Stage 3: Reveal overlay -->
+<div id="reveal-overlay">
+  <div id="rev-spotlight"></div>
+  <div id="reveal-skip-hint" style="position:fixed;bottom:22px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.28);pointer-events:none;letter-spacing:.04em;">화면을 클릭하면 바로 결과를 확인합니다</div>
+  <div id="reveal-inner">
+    <div id="reveal-tada">✨ 짜잔! ✨</div>
+    <div class="rcap-wrap" id="rcap-wrap">
+      <div class="rcap-top" id="rcap-top"></div>
+      <div class="rcap-bot" id="rcap-bot"></div>
+    </div>
+    <div id="reveal-label">🎉 당첨!</div>
+    <div id="reveal-name">—</div>
+    <div id="reveal-sub"></div>
+    <button class="btn btn-cyan" id="reveal-close" onclick="closeReveal()">확인 ✓</button>
+  </div>
+</div>
+
+<!-- Stage 3: Secret panel -->
+<div id="secret-panel">
+  <div class="sp-label">다음 뽑기 설정</div>
+  <select id="sec-sel" style="margin-bottom:10px;"></select>
+  <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;margin-bottom:12px;">
+    <input type="checkbox" id="sec-oneshot" checked> 1회 적용 후 자동 해제
+  </label>
+  <div class="btn-row">
+    <button class="btn btn-cyan btn-sm" onclick="applySecret()">설정</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeSecret()">닫기</button>
+  </div>
+</div>
+<div id="sec-zone" onclick="handleSecTap()"></div>
+
+<header>
+  <div class="title">🎪 교실 매직박스</div>
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('seats',this)">🪑 자리 변경</button>
+    <button class="tab-btn" onclick="switchTab('pick',this)">🎤 발표 뽑기</button>
+    <button class="tab-btn" onclick="switchTab('order',this)">🎰 순서 정하기</button>
+    <button class="tab-btn" onclick="switchTab('manage',this)">⚙️ 학생 관리</button>
+  </nav>
+  <div class="class-bar">
+    <span class="class-bar-lbl">🏫 반</span>
+    <select id="cls-sel" onchange="switchClass(parseInt(this.value))"></select>
+    <button class="cb-btn" onclick="promptAddClass()" title="새 반 추가">＋반</button>
+    <button class="cb-btn" onclick="promptRenameClass()" title="반 이름 변경">✏️</button>
+    <button class="cb-btn cb-del" onclick="confirmDeleteClass()" title="반 삭제">🗑️</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ══ TAB: 자리 변경 ══ -->
+<div id="tab-seats" class="tab-pane active">
+  <div class="seat-tab-layout">
+    <div class="card">
+      <div class="card-title">🏫 교실 배치도 <span class="hint" style="font-weight:400;margin-left:4px;font-size:12px;">모둠 블록을 드래그하여 이동</span></div>
+      <canvas id="group-canvas" width="1600" height="1040"></canvas>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+        <button id="glock-mode-btn" onclick="toggleGlockMode()" style="flex:1;">🔒 자리 성별 고정 모드</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSeatLocks()" title="모든 자리 잠금 초기화" style="padding:7px 10px;flex-shrink:0;">🗑 초기화</button>
+      </div>
+      <p class="hint" style="margin-top:6px;font-size:11px;" id="glock-hint">모드 활성화 후 자리를 클릭: 없음 → ♂남 → ♀여 → 없음 순환</p>
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.5px;margin-bottom:8px;">📐 레이아웃 프리셋</div>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="applyPreset('rows')">➡ ㅡ자 (행렬)</button>
+          <button class="preset-btn" onclick="applyPreset('square')">⬜ ㅁ자 (사방)</button>
+          <button class="preset-btn" onclick="applyPreset('c')">↩ ㄷ자 형</button>
+          <button class="preset-btn" onclick="applyPreset('pairs')">👫 전통 짝꿍</button>
+        </div>
+      </div>
+    </div>
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">👥 모둠 설정</div>
+        <div class="group-cfg-row">
+          <span>모둠 수</span>
+          <div class="num-ctrl">
+            <button onclick="adjGroupCount(-1)">−</button>
+            <span class="num-val" id="group-count-val">6</span>
+            <button onclick="adjGroupCount(1)">＋</button>
+          </div>
+        </div>
+        <div class="group-cfg-row" style="margin-bottom:6px;">
+          <span>모둠당 인원</span>
+          <div class="num-ctrl">
+            <button onclick="adjGroupSeats(-1)">−</button>
+            <span class="num-val" id="group-seats-val">4</span>
+            <button onclick="adjGroupSeats(1)">＋</button>
+          </div>
+        </div>
+        <div class="hint" id="group-total-hint"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 셔플 범위</div>
+        <div class="scope-grp" id="scope-grp">
+          <button class="mode-btn active" onclick="setShuffleScope('all',this)">🌐 전체 셔플</button>
+          <button class="mode-btn" onclick="setShuffleScope('within',this)">🔁 모둠 내 셔플</button>
+          <button class="mode-btn" onclick="setShuffleScope('between',this)">↔ 모둠 간 이동</button>
+          <button class="mode-btn" onclick="setShuffleScope('full',this)">⚡ 모둠+자리 전체</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 제약 조건</div>
+        <label class="toggle-row" style="margin-bottom:14px;">
+          <span>모둠 내 성별 균형</span>
+          <input type="checkbox" id="gender-balance-chk" onchange="setGenderBalance(this.checked)">
+        </label>
+        <hr>
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.3px;margin-bottom:8px;">같은 모둠 금지 쌍</div>
+          <div class="btn-row" style="margin-bottom:8px;">
+            <select id="sep-a" style="flex:1;font-size:12px;padding:5px 8px;"></select>
+            <select id="sep-b" style="flex:1;font-size:12px;padding:5px 8px;"></select>
+            <button class="btn btn-ghost btn-sm" onclick="addSeparation()" style="flex-shrink:0;padding:7px 10px;">＋</button>
+          </div>
+          <div id="sep-list" class="sep-list hint"></div>
+        </div>
+        <hr>
+        <div style="margin-top:10px;">
+          <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.3px;margin-bottom:6px;">🔒 자리 성별 고정 현황</div>
+          <div id="seat-lock-summary" class="hint" style="font-size:11px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ 셔플</div>
+        <div class="field">
+          <label>애니메이션: <span id="speed-val">7</span>초</label>
+          <input type="range" id="speed-slider" min="3" max="15" value="7" oninput="updateSpeed(this.value)">
+          <div style="display:flex;justify-content:space-between;" class="hint"><span>빠름</span><span>느림</span></div>
+        </div>
+        <label class="toggle-row" style="margin-bottom:10px;">
+          <span>🎵 셔플 BGM</span>
+          <input type="checkbox" id="shuffle-bgm-chk" onchange="setShuffleBgm(this.checked)" checked>
+        </label>
+        <button class="btn btn-gold btn-full btn-shuffle" onclick="startShuffle()">🎲 자리 셔플!</button>
+      </div>
+      <div class="card" id="result-card" style="display:none;">
+        <div class="card-title">📋 결과</div>
+        <div class="btn-row">
+          <button class="btn btn-cyan" style="flex:1;" onclick="startShuffle()">↩ 다시 섞기</button>
+          <button class="btn btn-ghost" onclick="printResult()">🖨 인쇄</button>
+        </div>
+      </div>
+      <div class="card"><div class="card-title">📊 현황</div><div id="stats"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: 발표 뽑기 ══ -->
+<div id="tab-pick" class="tab-pane">
+  <div class="pick-layout">
+    <div class="card">
+      <div class="pick-card-head">
+        <div class="card-title" style="margin-bottom:0;">🎰 캡슐 뽑기 머신</div>
+        <div class="pick-settings-wrap">
+          <button class="ico-btn" id="pick-cfg-btn" onclick="togglePickSettings()" title="연출 설정">⚙️</button>
+          <div id="pick-settings-panel">
+            <div class="ps-sec">
+              <div class="ps-sec-lbl">연출</div>
+              <div class="ps-row"><span>애니메이션</span><label class="sw"><input type="checkbox" id="ps-anim" onchange="savePkCfg()"><span class="sw-sl"></span></label></div>
+              <div class="ps-row"><span>파티클(색종이)</span><label class="sw"><input type="checkbox" id="ps-particle" onchange="savePkCfg()"><span class="sw-sl"></span></label></div>
+              <div class="ps-row"><span>연출 속도</span><input type="range" id="ps-speed" min="1" max="10" step="1" oninput="savePkCfg()"></div>
+            </div>
+            <div class="ps-sec">
+              <div class="ps-sec-lbl">소리</div>
+              <div class="ps-row"><span>효과음 / BGM</span><label class="sw"><input type="checkbox" id="ps-sound" onchange="savePkCfg()"><span class="sw-sl"></span></label></div>
+              <div class="ps-row"><span>마스터 볼륨</span><input type="range" id="ps-vol" min="0" max="100" step="5" oninput="savePkCfg()"></div>
+            </div>
+            <div class="ps-sec">
+              <div class="ps-sec-lbl">🎯 확률 가중치 (시크릿)</div>
+              <div style="font-size:10px;color:var(--txt2);margin-bottom:6px;opacity:.8;">선택 학생의 뽑힐 확률 배율 조정</div>
+              <select id="ps-wsel" style="width:100%;margin-bottom:6px;font-size:12px;padding:4px 8px;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:6px;color:var(--txt);"></select>
+              <div class="ps-row"><span>배율: <strong id="ps-wval" style="color:var(--gold)">3</strong>x</span><input type="range" id="ps-wslider" min="1" max="10" value="3" style="width:80px;" oninput="psWUpd(this.value)"></div>
+              <div class="btn-row" style="margin-top:8px;">
+                <button class="btn btn-gold btn-sm" style="flex:1;" onclick="psWApply()">적용</button>
+                <button class="btn btn-ghost btn-sm" onclick="psWClear()">해제</button>
+              </div>
+              <div id="ps-wstatus" style="font-size:11px;color:var(--gold);margin-top:4px;min-height:14px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <canvas id="capsule-canvas" width="500" height="430"></canvas>
+      <div class="pick-controls">
+        <button class="btn btn-gold btn-shuffle" onclick="startAutoPick()">🎲 자동 뽑기</button>
+        <button class="btn btn-ghost" id="manual-btn" onclick="toggleManual()">👆 직접 선택</button>
+      </div>
+      <p class="hint" id="pick-hint"></p>
+    </div>
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">⚙️ 뽑기 설정</div>
+        <label class="toggle-row" style="margin-bottom:10px;">
+          <span>⚡ 즉시 결과 모드</span>
+          <input type="checkbox" id="instant-mode-chk" onchange="toggleInstantMode(this.checked)">
+        </label>
+        <div style="font-size:11px;color:var(--txt2);margin:-6px 0 10px;padding:0 2px;">자동뽑기 클릭 시 캡슐 없이 결과 바로 표시</div>
+        <label class="toggle-row" style="margin-bottom:10px;">
+          <span>중복 방지</span>
+          <input type="checkbox" id="no-repeat-chk" onchange="toggleNoRepeat(this.checked)">
+        </label>
+        <div id="no-repeat-status" style="font-size:12px;color:var(--cyan);margin-bottom:10px;min-height:16px;padding:0 2px;"></div>
+        <button class="btn btn-ghost btn-sm btn-full" style="color:var(--red);border-color:rgba(239,83,80,.3);" onclick="resetPick()">🔄 뽑기 기록 초기화</button>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>📋 뽑힌 학생 목록</span>
+          <span id="history-badge" class="nbadge">0명</span>
+        </div>
+        <div id="pick-history-list" class="hint"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>🔢 학생 번호표</span>
+          <span id="roster-badge" class="nbadge">0명</span>
+        </div>
+        <div id="pick-roster-wrap" style="margin-top:4px;">
+          <table id="pick-roster-table" style="width:100%;border-collapse:collapse;font-size:12px;"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: 순서 정하기 ══ -->
+<div id="tab-order" class="tab-pane">
+  <div class="order-layout">
+    <div class="order-left">
+      <div class="card">
+        <div class="card-title">🎰 핀볼 순서 뽑기</div>
+        <p class="hint" style="margin:8px 0 14px;line-height:1.6;">현재 반 학생들을 핀볼처럼 떨어뜨려 발표 순서를 뽑아요.<br>먼저 바닥에 닿는 학생이 1번입니다.</p>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-gold btn-full" id="order-start-btn" onclick="pbStart()">▶ 시작</button>
+          <button class="btn btn-ghost btn-sm" style="flex:0 0 auto;padding:0 14px;" onclick="pbReset()">↺</button>
+        </div>
+        <p class="hint" id="pb-status" style="margin-top:10px;text-align:center;color:var(--cyan);min-height:18px;"></p>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>📋 발표 순서</span>
+          <span id="pb-count-badge" class="nbadge">0명</span>
+        </div>
+        <div id="pb-result-list" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="order-canvas-wrap" id="order-canvas-wrap">
+      <canvas id="order-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: 학생 관리 ══ -->
+<div id="tab-manage" class="tab-pane">
+  <div class="mgmt-layout">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span>👥 학생 목록</span><span id="cnt-badge" class="nbadge">0명</span>
+      </div>
+      <div class="tbl-wrap" id="student-list"></div>
+    </div>
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">➕ 학생 추가</div>
+        <div class="field"><label>이름</label><input type="text" id="add-name" placeholder="김민준" maxlength="10"></div>
+        <div class="field"><label>성별</label><select id="add-gender"><option value="M">남 ♂</option><option value="F">여 ♀</option></select></div>
+        <button class="btn btn-cyan btn-full" onclick="addStudent()">추가하기</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 일괄 입력</div>
+        <div class="field"><label>목록 붙여넣기</label><textarea id="bulk-txt" placeholder="김민준,남&#10;이서연,여&#10;박도윤,남"></textarea></div>
+        <p class="hint" style="margin-bottom:12px;">형식: <code>이름,성별</code> — 한 줄에 한 명</p>
+        <div class="btn-row">
+          <button class="btn btn-gold btn-full" onclick="bulkAdd(false)">일괄 추가</button>
+          <button class="btn btn-ghost btn-sm" onclick="bulkAdd(true)">덮어쓰기</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📁 엑셀 파일 입력</div>
+        <div class="drag-zone" id="drag-zone"
+          onclick="document.getElementById('xl-file-input').click()"
+          ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
+          <div class="dz-icon">📂</div>
+          <div class="dz-text">파일을 드래그하거나 클릭하여 선택</div>
+          <div class="dz-sub">.xlsx &nbsp;·&nbsp; .xls &nbsp;·&nbsp; .csv</div>
+        </div>
+        <input type="file" id="xl-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="xlHandleFile(event)">
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px;" onclick="xlDownloadSample()">⬇ 샘플 엑셀 다운로드</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🏫 모둠 설정</div>
+        <div class="group-cfg-row">
+          <span>모둠 수</span>
+          <div class="num-ctrl">
+            <button onclick="adjGroupCount(-1)">−</button>
+            <span class="num-val" id="mgmt-group-count-val">6</span>
+            <button onclick="adjGroupCount(1)">＋</button>
+          </div>
+        </div>
+        <div class="group-cfg-row" style="margin-bottom:8px;">
+          <span>모둠당 인원</span>
+          <div class="num-ctrl">
+            <button onclick="adjGroupSeats(-1)">−</button>
+            <span class="num-val" id="mgmt-group-seats-val">4</span>
+            <button onclick="adjGroupSeats(1)">＋</button>
+          </div>
+        </div>
+        <p class="hint">자세한 배치는 <strong style="color:var(--cyan)">자리 변경</strong> 탭에서 설정하세요.</p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <button class="btn btn-ghost btn-full" onclick="_p9open()" style="color:var(--txt2);font-size:13px;letter-spacing:.5px;">🔒 교사 전용 대시보드</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ══ EXCEL PREVIEW MODAL ══ -->
+<div id="excel-preview-modal" style="display:none;">
+  <div id="excel-preview-inner">
+    <div class="ep-header">
+      <div>
+        <div class="ep-title">📊 파일 미리보기</div>
+        <div id="ep-filename" class="hint" style="margin-top:2px;"></div>
+      </div>
+      <div id="ep-stats"></div>
+    </div>
+    <div id="ep-table-wrap">
+      <table class="ep-table">
+        <thead>
+          <tr><th style="width:36px">#</th><th>이름</th><th>성별</th><th>상태</th><th style="width:36px"></th></tr>
+        </thead>
+        <tbody id="ep-tbody"></tbody>
+      </table>
+    </div>
+    <div id="ep-dup-warn" style="display:none;"></div>
+    <div class="ep-footer">
+      <span class="ep-footer-note" id="ep-footer-note"></span>
+      <button class="btn btn-ghost btn-sm" onclick="closeXlPreview()">취소</button>
+      <button class="btn btn-gold" id="ep-import-btn" onclick="xlImport()">✅ 전체 등록</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════════════ */
+let S = {
+  students: [],
+  groups: [],
+  groupCfg: { count:6, seatsPerGroup:4, shuffleScope:'all', genderBalance:false, separation:[] },
+  assignment: {},
+  seatLocks: {},   // key "gId-sIdx" → 'M'|'F'
+  shuffleSpeed: 7,
+  hasResult: false, editId: null, animRunning: false,
+  pick: { history: [], noRepeat: false },
+  pkCfg: { animOn:true, soundOn:true, particleOn:true, speed:5, volume:85, instantMode:false },
+  shuffleCfg: { bgmOn:true },
+  // ── 반(Class) 관리 ──
+  classes: [],       // [{ id, name, students, pick, assignment, seatLocks }]
+  activeClassId: null
+};
+
+/* ════════════════════════════════════════════════════════
+   PERSISTENCE
+════════════════════════════════════════════════════════ */
+/* ── Class helper: active class를 S.* 라이브 데이터로 동기화 ── */
+function getActiveClass(){
+  return S.classes.find(c=>c.id===S.activeClassId)||null;
+}
+function syncActiveClassData(){
+  const cls=getActiveClass(); if(!cls)return;
+  cls.students=S.students;
+  cls.pick=S.pick;
+  cls.assignment=S.assignment;
+  cls.seatLocks=S.seatLocks;
+}
+
+function save() {
+  syncActiveClassData();
+  localStorage.setItem('mb_classes',       JSON.stringify(S.classes));
+  localStorage.setItem('mb_activeClassId', JSON.stringify(S.activeClassId));
+  localStorage.setItem('mb_groups',        JSON.stringify(S.groups));
+  localStorage.setItem('mb_groupCfg',      JSON.stringify(S.groupCfg));
+  localStorage.setItem('mb_speed',         S.shuffleSpeed);
+  localStorage.setItem('mb_pkCfg',         JSON.stringify(S.pkCfg));
+  localStorage.setItem('mb_shuffleCfg',    JSON.stringify(S.shuffleCfg));
+}
+function load() {
+  try {
+    const gr=localStorage.getItem('mb_groups');     if(gr) S.groups=JSON.parse(gr);
+    const gc=localStorage.getItem('mb_groupCfg');   if(gc) S.groupCfg={...S.groupCfg,...JSON.parse(gc)};
+    const sp=localStorage.getItem('mb_speed');      if(sp) S.shuffleSpeed=parseInt(sp)||7;
+    const pc=localStorage.getItem('mb_pkCfg');      if(pc) S.pkCfg={...S.pkCfg,...JSON.parse(pc)};
+    const sc=localStorage.getItem('mb_shuffleCfg'); if(sc) S.shuffleCfg={...S.shuffleCfg,...JSON.parse(sc)};
+
+    const clsRaw=localStorage.getItem('mb_classes');
+    if(clsRaw){
+      // 신규 포맷
+      S.classes=JSON.parse(clsRaw);
+      const aid=localStorage.getItem('mb_activeClassId');
+      S.activeClassId=aid?JSON.parse(aid):null;
+    } else {
+      // 구버전 단일반 → 마이그레이션
+      const s=localStorage.getItem('mb_students');
+      const a=localStorage.getItem('mb_assignment');
+      const pk=localStorage.getItem('mb_pick');
+      const sl=localStorage.getItem('mb_seatLocks');
+      const firstCls={
+        id:Date.now(), name:'1반',
+        students: s?JSON.parse(s):[],
+        pick: pk?{...{history:[],noRepeat:false},...JSON.parse(pk)}:{history:[],noRepeat:false},
+        assignment: a?JSON.parse(a):{},
+        seatLocks: sl?(JSON.parse(sl)||{}):{},
+      };
+      S.classes=[firstCls];
+      S.activeClassId=firstCls.id;
+    }
+    // activeClassId 유효성 확인
+    if(!S.classes.find(c=>c.id===S.activeClassId)) S.activeClassId=S.classes[0]?.id||null;
+    // 활성 반 데이터 로드
+    const cls=S.classes.find(c=>c.id===S.activeClassId);
+    if(cls){
+      S.students=cls.students||[];
+      S.pick={...{history:[],noRepeat:false},...(cls.pick||{})};
+      cls.pick=S.pick;
+      S.assignment=cls.assignment||{};
+      S.seatLocks=cls.seatLocks||{};
+      S.hasResult=Object.keys(S.assignment).length>0;
+    }
+  } catch(e){}
+}
+/* ════════════════════════════════════════════════════════
+   CLASS MANAGEMENT
+════════════════════════════════════════════════════════ */
+function renderClassSelector(){
+  const sel=document.getElementById('cls-sel'); if(!sel)return;
+  sel.innerHTML=S.classes.map(c=>
+    `<option value="${c.id}"${c.id===S.activeClassId?' selected':''}>${escHtml(c.name)}</option>`
+  ).join('');
+}
+
+function switchClass(id){
+  if(id===S.activeClassId)return;
+  syncActiveClassData(); // 현재 반 저장
+  S.activeClassId=id;
+  const cls=getActiveClass(); if(!cls)return;
+  S.students=cls.students||[];
+  S.pick={...{history:[],noRepeat:false},...(cls.pick||{})};
+  cls.pick=S.pick;
+  S.assignment=cls.assignment||{};
+  S.seatLocks=cls.seatLocks||{};
+  S.hasResult=Object.keys(S.assignment).length>0;
+  S.editId=null;
+  // 픽 탭 상태 초기화
+  pickState='idle';winnerStudent=null;winnerCap=null;
+  save(); renderAll();
+  if(document.getElementById('tab-pick')?.classList.contains('active')) initPickTab();
+  toast(`📚 ${cls.name} 선택됨`,'var(--cyan)');
+}
+
+function promptAddClass(){
+  const name=prompt('새 반 이름을 입력하세요:',`${S.classes.length+1}반`);
+  if(!name||!name.trim())return;
+  const n=name.trim();
+  const id=Date.now();
+  S.classes.push({id,name:n,students:[],pick:{history:[],noRepeat:false},assignment:{},seatLocks:{}});
+  switchClass(id);
+  toast(`📚 ${n} 추가됨!`,'var(--gold)');
+}
+
+function promptRenameClass(){
+  const cls=getActiveClass(); if(!cls)return;
+  const name=prompt('반 이름 변경:',cls.name);
+  if(!name||!name.trim()||name.trim()===cls.name)return;
+  cls.name=name.trim();
+  save(); renderClassSelector();
+  toast(`✏️ "${cls.name}"으로 변경됨`);
+}
+
+function confirmDeleteClass(){
+  if(S.classes.length<=1){toast('마지막 반은 삭제할 수 없습니다!','var(--red)');return;}
+  const cls=getActiveClass(); if(!cls)return;
+  if(!confirm(`'${cls.name}'을(를) 삭제할까요?\n이 반의 학생 데이터가 모두 사라집니다.`))return;
+  const remaining=S.classes.filter(c=>c.id!==cls.id);
+  S.classes=remaining;
+  // 다음 반으로 직접 전환 (sync 없이 — 삭제된 반 덮어쓰기 방지)
+  const next=remaining[0];
+  S.activeClassId=next.id;
+  S.students=next.students||[];
+  S.pick={...{history:[],noRepeat:false},...(next.pick||{})};
+  next.pick=S.pick;
+  S.assignment=next.assignment||{};
+  S.seatLocks=next.seatLocks||{};
+  S.hasResult=Object.keys(S.assignment).length>0;
+  S.editId=null;
+  pickState='idle';winnerStudent=null;winnerCap=null;
+  save(); renderAll();
+  if(document.getElementById('tab-pick')?.classList.contains('active')) initPickTab();
+  toast(`🗑️ 삭제됨 → ${next.name}`,'var(--red)');
+}
+
+function savePkCfg(){
+  S.pkCfg.animOn=document.getElementById('ps-anim')?.checked??true;
+  S.pkCfg.soundOn=document.getElementById('ps-sound')?.checked??true;
+  S.pkCfg.particleOn=document.getElementById('ps-particle')?.checked??true;
+  S.pkCfg.speed=parseInt(document.getElementById('ps-speed')?.value||5);
+  S.pkCfg.volume=parseInt(document.getElementById('ps-vol')?.value||50);
+  _auVol(S.pkCfg.volume/100);
+  save();
+}
+function syncPkCfgUI(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.checked=v;};
+  const setV=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('ps-anim',S.pkCfg.animOn); set('ps-sound',S.pkCfg.soundOn); set('ps-particle',S.pkCfg.particleOn);
+  setV('ps-speed',S.pkCfg.speed); setV('ps-vol',S.pkCfg.volume);
+  // 확률 가중치 select 동기화
+  const pwsel=document.getElementById('ps-wsel');
+  if(pwsel){
+    const present=S.students.filter(s=>s.isPresent);
+    pwsel.innerHTML='<option value="">-- 없음 (균등 확률) --</option>'+present.map(s=>`<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+    if(_s7m._wt)pwsel.value=_s7m._wt;
+  }
+  setV('ps-wslider',_s7m._w);
+  const wv=document.getElementById('ps-wval');if(wv)wv.textContent=_s7m._w;
+  const wst=document.getElementById('ps-wstatus');
+  if(wst){
+    if(_s7m._wt){const n=S.students.find(s=>s.id===_s7m._wt)?.name||'?';wst.textContent=`✓ ${n}: ${_s7m._w}배 가중치 적용 중`;}
+    else wst.textContent='';
+  }
+}
+function togglePickSettings(){
+  const p=document.getElementById('pick-settings-panel');
+  p.style.display=p.style.display==='block'?'none':'block';
+  if(p.style.display==='block')syncPkCfgUI();
+}
+document.addEventListener('click',e=>{
+  const p=document.getElementById('pick-settings-panel');
+  if(p&&p.style.display==='block'&&!p.contains(e.target)&&e.target.id!=='pick-cfg-btn') p.style.display='none';
+});
+
+/* ════════════════════════════════════════════════════════
+   TOAST / TABS
+════════════════════════════════════════════════════════ */
+let _tt=null;
+function toast(msg,color){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.borderColor=color||'var(--cyan)'; el.style.color=color||'var(--cyan)';
+  el.classList.add('show'); if(_tt)clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2600);
+}
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active'); btn.classList.add('active');
+  if(id==='pick'){initPickTab();} else {stopPickLoop();}
+  if(id==='order'){pbActivate();} else {pbDeactivate();}
+  renderAll();
+}
+
+/* ════════════════════════════════════════════════════════
+   RENDER ALL
+════════════════════════════════════════════════════════ */
+function renderAll(){
+  renderGroupCanvas(); renderStudents(); renderStats(); syncGroupUI();
+  renderSeparationList(); renderSeatLockSummary(); renderPickHistory(); renderPickRoster();
+  renderClassSelector();
+  const rc=document.getElementById('result-card'); if(rc) rc.style.display=S.hasResult?'':'none';
+}
+function syncGroupUI(){
+  const sv=document.getElementById('speed-val'); if(sv)sv.textContent=S.shuffleSpeed;
+  const ss=document.getElementById('speed-slider'); if(ss)ss.value=S.shuffleSpeed;
+  const nr=document.getElementById('no-repeat-chk'); if(nr)nr.checked=S.pick.noRepeat;
+  const imc=document.getElementById('instant-mode-chk'); if(imc)imc.checked=S.pkCfg.instantMode||false;
+  // Group count/seats displays
+  ['group-count-val','mgmt-group-count-val'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=S.groupCfg.count;});
+  ['group-seats-val','mgmt-group-seats-val'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=S.groupCfg.seatsPerGroup;});
+  const gbc=document.getElementById('gender-balance-chk'); if(gbc)gbc.checked=S.groupCfg.genderBalance;
+  const sbc=document.getElementById('shuffle-bgm-chk'); if(sbc)sbc.checked=S.shuffleCfg.bgmOn;
+  // Group total hint + 균등 배분 예시
+  const hint=document.getElementById('group-total-hint');
+  if(hint){
+    const total=S.groups.reduce((sum,g)=>sum+g.cols*g.rows,0);
+    const present=S.students.filter(s=>s.isPresent).length;
+    const G=S.groups.length;
+    let distHtml='';
+    if(present>0&&G>0){
+      const base=Math.floor(present/G),extra=present%G;
+      if(extra>0){
+        // 예: 17명 4모둠 → "4모둠×4명 + 1모둠×5명"
+        const parts=[];
+        if(G-extra>0)parts.push(`${G-extra}모둠×${base}명`);
+        parts.push(`${extra}모둠×${base+1}명`);
+        distHtml=` <span style="color:var(--cyan);font-size:11px;">(균등배분: ${parts.join(' + ')})</span>`;
+      } else {
+        distHtml=` <span style="color:var(--cyan);font-size:11px;">(모둠당 ${base}명)</span>`;
+      }
+    }
+    hint.innerHTML=`총 좌석 <strong style="color:var(--gold)">${total}개</strong> · 출석 <strong style="color:var(--green)">${present}명</strong>${distHtml}`;
+  }
+  // Restore shuffle scope UI
+  const scopeGrp=document.getElementById('scope-grp');
+  if(scopeGrp){
+    const map={all:0,within:1,between:2,full:3};
+    scopeGrp.querySelectorAll('.mode-btn').forEach((b,i)=>b.classList.toggle('active',i===(map[S.groupCfg.shuffleScope]??0)));
+  }
+  populateSepSelects();
+}
+
+/* ════════════════════════════════════════════════════════
+   GROUP CANVAS (Stage 4)
+════════════════════════════════════════════════════════ */
+const GC={W:1600,H:1040,SW:120,SH:96,GS:10,GP:18,GT:40};
+const GROUP_FILL=['#0b2540','#0b3120','#36102a','#36280a','#190a36','#0a2030','#36180a','#181836'];
+const GROUP_BORDER=['#4fc3f7','#4caf50','#f06292','#ffb74d','#ab47bc','#26c6da','#ff7043','#7986cb'];
+
+let gcDrag=null, gcCanvas=null, gcCtx=null, gcLastPreset='rows';
+let gcLockMode=false;
+
+function groupBlockSize(g){
+  return{w:g.cols*GC.SW+(g.cols-1)*GC.GS+2*GC.GP, h:GC.GT+g.rows*GC.SH+(g.rows-1)*GC.GS+2*GC.GP};
+}
+
+function initGroupsIfEmpty(){
+  if(S.groups.length>0)return;
+  createDefaultGroups();
+  applyPreset('rows',false);
+}
+
+function createDefaultGroups(){
+  const{count,seatsPerGroup}=S.groupCfg;
+  const cols=seatsPerGroup<=2?seatsPerGroup:2, rows=Math.ceil(seatsPerGroup/cols);
+  S.groups=[];
+  for(let i=0;i<count;i++) S.groups.push({id:i+1,x:50,y:50,cols,rows});
+}
+
+function resizeGroupCanvas(){
+  const canvas=document.getElementById('group-canvas'); if(!canvas||!gcCtx)return;
+  const card=canvas.closest('.card'); if(!card)return;
+  // 카드 내 캔버스 가용 공간 계산 (card padding 40px + title 40px + 캔버스 아래 컨트롤 200px)
+  const availW=Math.max(100, card.clientWidth-44);
+  const availH=Math.max(100, card.clientHeight-280);
+  const scaleW=availW/GC.W;
+  const scaleH=availH/GC.H;
+  const scale=Math.min(scaleW, scaleH, 1);
+  // 가로세로 동일 비율로 설정 → 비율 왜곡 없음
+  canvas.style.width=Math.round(GC.W*scale)+'px';
+  canvas.style.height=Math.round(GC.H*scale)+'px';
+}
+
+function resizePickCanvas(){
+  const canvas=document.getElementById('capsule-canvas'); if(!canvas)return;
+  const card=canvas.closest('.card'); if(!card)return;
+  // 카드 내 비캔버스 요소 높이 합산 (card-head, controls, hint)
+  let nonCanvasH=0;
+  for(const child of card.children){
+    if(child===canvas)continue;
+    nonCanvasH+=child.offsetHeight+(parseInt(getComputedStyle(child).marginTop)||0)+(parseInt(getComputedStyle(child).marginBottom)||0);
+  }
+  const cardPadV=(parseInt(getComputedStyle(card).paddingTop)||0)+(parseInt(getComputedStyle(card).paddingBottom)||0);
+  const availW=Math.max(100, card.clientWidth-44);
+  const availH=Math.max(100, card.clientHeight-cardPadV-nonCanvasH-8);
+  // 1 캡 제거 → 화면에 맞게 자유롭게 확대
+  const scale=Math.min(availW/CW, availH/CH);
+  const newCSSW=Math.round(CW*scale), newCSSH=Math.round(CH*scale);
+  canvas.style.width=newCSSW+'px';
+  canvas.style.height=newCSSH+'px';
+  // 버퍼도 함께 확대 → 선명도 유지
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const newBufW=Math.round(newCSSW*dpr), newBufH=Math.round(newCSSH*dpr);
+  if(canvas.width!==newBufW||canvas.height!==newBufH){
+    canvas.width=newBufW; canvas.height=newBufH;
+    canvas.getContext('2d').scale(scale*dpr,scale*dpr);
+  }
+}
+
+function renderGroupCanvas(){
+  const canvas=document.getElementById('group-canvas'); if(!canvas)return;
+  if(!gcCtx){
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=GC.W*dpr; canvas.height=GC.H*dpr;
+    gcCtx=canvas.getContext('2d'); gcCtx.scale(dpr,dpr);
+    gcCanvas=canvas; setupCanvasEvents();
+  }
+  resizeGroupCanvas();
+  if(S.groups.length===0)initGroupsIfEmpty();
+  drawGroupCanvas();
+}
+
+function drawGroupCanvas(){
+  if(!gcCtx)return;
+  const ctx=gcCtx;
+  ctx.clearRect(0,0,GC.W,GC.H);
+
+  // Background
+  ctx.fillStyle='#060c1e'; ctx.fillRect(0,0,GC.W,GC.H);
+  // Dot grid
+  ctx.fillStyle='rgba(28,45,79,.35)';
+  for(let x=60;x<GC.W;x+=80)for(let y=60;y<GC.H;y+=80){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}
+
+  // Teacher desk
+  const dW=400,dH=60,dX=(GC.W-dW)/2,dY=20;
+  const dg=ctx.createLinearGradient(dX,dY,dX+dW,dY+dH);
+  dg.addColorStop(0,'rgba(255,215,0,.13)');dg.addColorStop(1,'rgba(255,215,0,.05)');
+  ctx.fillStyle=dg;ctx.beginPath();ctx.roundRect(dX,dY,dW,dH,12);ctx.fill();
+  ctx.strokeStyle='rgba(255,215,0,.5)';ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle='rgba(255,215,0,.9)';ctx.font='bold 24px "Noto Sans KR",sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('📋 교  탁',dX+dW/2,dY+dH/2);
+
+  // Groups
+  S.groups.forEach((g,i)=>drawGroup(ctx,g,i));
+}
+
+function drawGroup(ctx,g,idx){
+  const{w,h}=groupBlockSize(g);
+  const bc=GROUP_BORDER[idx%GROUP_BORDER.length];
+  // Shadow
+  ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=20;ctx.shadowOffsetY=6;
+  ctx.fillStyle=GROUP_FILL[idx%GROUP_FILL.length];
+  ctx.beginPath();ctx.roundRect(g.x,g.y,w,h,16);ctx.fill();
+  ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+  ctx.strokeStyle=bc;ctx.lineWidth=3;ctx.stroke();
+  // Label
+  ctx.fillStyle=bc;ctx.font='bold 22px "Noto Sans KR",sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(`${g.id}모둠`,g.x+w/2,g.y+GC.GT/2);
+  // Seats
+  for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+    drawSeat(ctx,g.x+GC.GP+c*(GC.SW+GC.GS),g.y+GC.GT+GC.GP+r*(GC.SH+GC.GS),g.id,r*g.cols+c,bc);
+  }
+}
+
+function drawSeat(ctx,x,y,groupId,seatIdx,groupColor){
+  const key=`${groupId}-${seatIdx}`;
+  const seatLock=S.seatLocks?.[key]; // 'M' | 'F' | undefined
+  const sid=S.assignment[key];
+  const student=sid!=null?S.students.find(s=>s.id===sid):null;
+  const isM=student?.gender==='M', isF=student?.gender==='F';
+  // Base fill — tint by seat lock if no student
+  let baseFill=student?(isM?'rgba(79,195,247,.18)':'rgba(192,132,252,.18)'):'rgba(8,15,35,.65)';
+  if(!student&&seatLock) baseFill=seatLock==='M'?'rgba(79,195,247,.08)':'rgba(192,132,252,.08)';
+  ctx.fillStyle=baseFill;
+  ctx.beginPath();ctx.roundRect(x,y,GC.SW,GC.SH,10);ctx.fill();
+  // Border — seat lock overrides colour
+  let strokeCol=student?(isM?'rgba(79,195,247,.45)':'rgba(192,132,252,.45)'):'rgba(28,45,79,.55)';
+  if(seatLock) strokeCol=seatLock==='M'?'rgba(79,195,247,.7)':'rgba(192,132,252,.7)';
+  ctx.strokeStyle=strokeCol;ctx.lineWidth=seatLock?3:2;ctx.stroke();
+  // Seat lock badge (top-right corner)
+  if(seatLock){
+    ctx.fillStyle=seatLock==='M'?'rgba(79,195,247,.85)':'rgba(192,132,252,.85)';
+    ctx.font='bold 18px sans-serif';ctx.textAlign='right';ctx.textBaseline='top';
+    ctx.fillText(seatLock==='M'?'♂':'♀',x+GC.SW-4,y+4);
+  }
+  if(student){
+    ctx.fillStyle=isM?'#b3e5fc':'#e1bee7';
+    const fontSize=student.name.length>3?20:24;
+    ctx.font=`bold ${fontSize}px "Noto Sans KR",sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(student.name,x+GC.SW/2,y+GC.SH/2-8);
+    ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='18px sans-serif';
+    ctx.fillText(isM?'♂':'♀',x+GC.SW/2,y+GC.SH/2+16);
+  } else {
+    ctx.fillStyle=seatLock?'rgba(120,160,200,.5)':'rgba(90,110,150,.4)';
+    ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('🪑',x+GC.SW/2,y+GC.SH/2);
+  }
+}
+
+/* ─── Canvas Events ── */
+function setupCanvasEvents(){
+  const c=gcCanvas;
+  c.addEventListener('mousedown',gcMouseDown);
+  c.addEventListener('mousemove',gcMouseMove);
+  c.addEventListener('mouseup',gcMouseUp);
+  c.addEventListener('mouseleave',gcMouseUp);
+  c.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];gcMouseDown({clientX:t.clientX,clientY:t.clientY});},{passive:false});
+  c.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];gcMouseMove({clientX:t.clientX,clientY:t.clientY});},{passive:false});
+  c.addEventListener('touchend',gcMouseUp,{passive:false});
+}
+function canvasXY(e){
+  const rect=gcCanvas.getBoundingClientRect(),sx=GC.W/rect.width,sy=GC.H/rect.height;
+  return{x:(e.clientX-rect.left)*sx,y:(e.clientY-rect.top)*sy};
+}
+function gcMouseDown(e){
+  if(S.animRunning)return;
+  const{x,y}=canvasXY(e);
+  // ── Lock mode: click seats to cycle gender lock ──
+  if(gcLockMode){
+    for(const g of S.groups){
+      const{w,h}=groupBlockSize(g);
+      if(x<g.x||x>g.x+w||y<g.y||y>g.y+h)continue;
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+        const sx=g.x+GC.GP+c*(GC.SW+GC.GS), sy=g.y+GC.GT+GC.GP+r*(GC.SH+GC.GS);
+        if(x>=sx&&x<=sx+GC.SW&&y>=sy&&y<=sy+GC.SH){
+          const key=`${g.id}-${r*g.cols+c}`;
+          const cur=S.seatLocks[key];
+          if(!cur) S.seatLocks[key]='M';
+          else if(cur==='M') S.seatLocks[key]='F';
+          else delete S.seatLocks[key];
+          save();drawGroupCanvas();renderSeatLockSummary();
+          return;
+        }
+      }
+    }
+    return;
+  }
+  // ── Normal drag ──
+  for(let i=S.groups.length-1;i>=0;i--){
+    const g=S.groups[i];const{w,h}=groupBlockSize(g);
+    if(x>=g.x&&x<=g.x+w&&y>=g.y&&y<=g.y+h){gcDrag={id:g.id,ox:x-g.x,oy:y-g.y};gcCanvas.style.cursor='grabbing';return;}
+  }
+}
+function gcMouseMove(e){
+  if(!gcDrag)return;
+  const{x,y}=canvasXY(e);
+  const g=S.groups.find(g=>g.id===gcDrag.id);if(!g)return;
+  const{w,h}=groupBlockSize(g);
+  g.x=clamp(x-gcDrag.ox,0,GC.W-w);g.y=clamp(y-gcDrag.oy,0,GC.H-h);
+  drawGroupCanvas();
+}
+function gcMouseUp(){if(gcDrag){gcDrag=null;gcCanvas.style.cursor='default';save();}}
+
+/* ─── Group Management ── */
+function adjGroupCount(delta){
+  const n=clamp(S.groupCfg.count+delta,1,12);if(n===S.groupCfg.count)return;
+  S.groupCfg.count=n;
+  if(n>S.groups.length){
+    const{seatsPerGroup}=S.groupCfg;
+    const cols=seatsPerGroup<=2?seatsPerGroup:2,rows=Math.ceil(seatsPerGroup/cols);
+    while(S.groups.length<n){
+      const id=S.groups.length?Math.max(...S.groups.map(g=>g.id))+1:1;
+      S.groups.push({id,x:50,y:50,cols,rows});
+    }
+    applyPreset(gcLastPreset,false);
+  } else {
+    const removed=S.groups.splice(n);
+    const kept=new Set(S.groups.map(g=>g.id));
+    Object.keys(S.assignment).forEach(k=>{if(!kept.has(parseInt(k)))delete S.assignment[k];});
+  }
+  save();renderAll();toast(`모둠 ${n}개!`);
+}
+
+function adjGroupSeats(delta){
+  const n=clamp(S.groupCfg.seatsPerGroup+delta,2,6);if(n===S.groupCfg.seatsPerGroup)return;
+  S.groupCfg.seatsPerGroup=n;
+  const cols=n<=2?n:2,rows=Math.ceil(n/cols);
+  S.groups.forEach(g=>{g.cols=cols;g.rows=rows;});
+  S.assignment={};S.hasResult=false;
+  applyPreset(gcLastPreset,false);
+  save();renderAll();toast(`모둠당 ${n}명!`);
+}
+
+function applyPreset(preset,doSave=true){
+  gcLastPreset=preset;
+  if(S.groups.length===0)createDefaultGroups();
+  const{seatsPerGroup}=S.groupCfg;
+  const cols=seatsPerGroup<=2?seatsPerGroup:2,rows=Math.ceil(seatsPerGroup/cols);
+  // For 'pairs' preset, override arrangement to 1-wide columns
+  const pairMode=preset==='pairs';
+  S.groups.forEach(g=>{g.cols=pairMode?1:cols;g.rows=pairMode?2:rows;});
+
+  const n=S.groups.length;
+  const pad=40,topY=96,hgap=28,vgap=28;
+  const gw=S.groups[0]?groupBlockSize(S.groups[0]).w:100;
+  const gh=S.groups[0]?groupBlockSize(S.groups[0]).h:100;
+
+  const availH=GC.H-topY-pad;
+  if(preset==='rows'){
+    const perRow=Math.max(1,Math.floor((GC.W-pad*2+hgap)/(gw+hgap)));
+    const numRows=Math.ceil(n/perRow);
+    const totalH=numRows*(gh+vgap)-vgap;
+    const startY=topY+Math.max(0,Math.floor((availH-totalH)/2));
+    S.groups.forEach((g,i)=>{
+      const row=Math.floor(i/perRow),col=i%perRow;
+      const rowCount=Math.min(n-row*perRow,perRow);
+      const rowW=rowCount*(gw+hgap)-hgap;
+      g.x=(GC.W-rowW)/2+col*(gw+hgap);g.y=startY+row*(gh+vgap);
+    });
+  } else if(preset==='square'){
+    // Arrange in a rectangular ring/perimeter
+    const side=Math.ceil(Math.sqrt(n));
+    const cols2=side,rows2=Math.ceil(n/side);
+    const ring=[];
+    for(let r=0;r<rows2;r++)for(let c=0;c<cols2;c++){
+      if(r===0||r===rows2-1||c===0||c===cols2-1)ring.push({r,c});
+    }
+    for(let r=1;r<rows2-1;r++)for(let c=1;c<cols2-1;c++)ring.push({r,c});
+    const totalW=cols2*(gw+hgap)-hgap,startX=(GC.W-totalW)/2;
+    const totalH2=rows2*(gh+vgap)-vgap;
+    const startY2=topY+Math.max(0,Math.floor((availH-totalH2)/2));
+    ring.slice(0,n).forEach(({r,c},i)=>{if(i<S.groups.length){S.groups[i].x=startX+c*(gw+hgap);S.groups[i].y=startY2+r*(gh+vgap);}});
+  } else if(preset==='c'){
+    // ㄷ자: left col, bottom row, right col — vertically centered
+    const leftN=Math.ceil(n/3),rightN=Math.ceil((n-leftN)/2),botN=n-leftN-rightN;
+    const rx=GC.W-gw-pad,lx=pad;
+    const colRows=Math.max(leftN,rightN);
+    const totalColH=colRows*(gh+vgap)-vgap;
+    const totalShapeH=totalColH+vgap+gh;
+    const shapeStartY=topY+Math.max(0,Math.floor((availH-totalShapeH)/2));
+    const botY=shapeStartY+totalColH+vgap;
+    const midStart=lx+gw+hgap,midEnd=rx-hgap,midW=midEnd-midStart;
+    let gi=0;
+    for(let i=0;i<leftN&&gi<n;i++,gi++){S.groups[gi].x=lx;S.groups[gi].y=shapeStartY+i*(gh+vgap);}
+    for(let i=0;i<botN&&gi<n;i++,gi++){
+      const bx=botN>1?midStart+i*(midW/(botN-1)):midStart+midW/2-gw/2;
+      S.groups[gi].x=bx;S.groups[gi].y=botY;
+    }
+    for(let i=0;i<rightN&&gi<n;i++,gi++){S.groups[gi].x=rx;S.groups[gi].y=shapeStartY+i*(gh+vgap);}
+  } else if(preset==='pairs'){
+    // Two banks facing center
+    const half=Math.ceil(n/2);
+    const pgw=groupBlockSize(S.groups[0]).w,pgh=groupBlockSize(S.groups[0]).h;
+    const lx=GC.W/2-pgw-28,rx=GC.W/2+28;
+    const totalPairsH=half*(pgh+vgap)-vgap;
+    const startYp=topY+Math.max(0,Math.floor((availH-totalPairsH)/2));
+    S.groups.forEach((g,i)=>{
+      const isLeft=i<half,row=isLeft?i:i-half;
+      g.x=isLeft?lx:rx;g.y=startYp+row*(pgh+vgap);
+    });
+  }
+
+  if(doSave){save();}
+  if(gcCtx)drawGroupCanvas();
+  syncGroupUI();
+}
+
+/* ════════════════════════════════════════════════════════
+   STATS
+════════════════════════════════════════════════════════ */
+function renderStats(){
+  const el=document.getElementById('stats'); if(!el)return;
+  const totalSeats=S.groups.reduce((sum,g)=>sum+g.cols*g.rows,0);
+  const present=S.students.filter(s=>s.isPresent).length;
+  const m=S.students.filter(s=>s.gender==='M').length, f=S.students.filter(s=>s.gender==='F').length;
+  el.innerHTML=[
+    srow('모둠 수',`${S.groups.length}개`,'var(--gold)'),srow('전체 좌석',`${totalSeats}개`,'var(--txt)'),
+    `<div style="border-top:1px solid var(--border);margin:6px 0;"></div>`,
+    srow('전체 학생',`${S.students.length}명`,'var(--txt)'),srow('출석',`${present}명`,'var(--green)'),
+    srow('남학생',`${m}명`,'var(--male)'),srow('여학생',`${f}명`,'var(--female)'),
+    S.hasResult?srow('배치됨',`${Object.keys(S.assignment).length}명`,'var(--gold)'):'',
+  ].join('');
+}
+function srow(l,v,c){return `<div class="stat-row"><span style="color:var(--txt2)">${l}</span><span class="stat-val" style="color:${c}">${v}</span></div>`;}
+
+/* ════════════════════════════════════════════════════════
+   CONSTRAINTS (Stage 4)
+════════════════════════════════════════════════════════ */
+function setShuffleScope(scope,btn){
+  S.groupCfg.shuffleScope=scope;
+  document.querySelectorAll('#scope-grp .mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');save();
+}
+function setGenderBalance(checked){S.groupCfg.genderBalance=checked;save();}
+
+function populateSepSelects(){
+  const present=S.students.filter(s=>s.isPresent);
+  ['sep-a','sep-b'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const cur=parseInt(sel.value)||0;
+    sel.innerHTML='<option value="">선택</option>'+present.map(s=>`<option value="${s.id}"${s.id===cur?' selected':''}>${escHtml(s.name)}</option>`).join('');
+  });
+}
+function addSeparation(){
+  const a=parseInt(document.getElementById('sep-a')?.value),b=parseInt(document.getElementById('sep-b')?.value);
+  if(!a||!b){toast('두 학생을 모두 선택해 주세요!','var(--red)');return;}
+  if(a===b){toast('같은 학생입니다!','var(--red)');return;}
+  if(S.groupCfg.separation.some(s=>(s.a===a&&s.b===b)||(s.a===b&&s.b===a))){toast('이미 등록된 쌍입니다!','var(--red)');return;}
+  S.groupCfg.separation.push({a,b});save();renderSeparationList();toast('분리 조건 추가!','var(--gold)');
+}
+function removeSeparation(a,b){
+  S.groupCfg.separation=S.groupCfg.separation.filter(s=>!(s.a===a&&s.b===b));
+  save();renderSeparationList();
+}
+function renderSeparationList(){
+  const el=document.getElementById('sep-list');if(!el)return;
+  const list=S.groupCfg.separation;
+  if(!list.length){el.innerHTML='<span>없음</span>';return;}
+  el.innerHTML=list.map(({a,b})=>{
+    const sa=S.students.find(x=>x.id===a),sb=S.students.find(x=>x.id===b);
+    if(!sa||!sb)return'';
+    return`<div class="sep-item"><span style="flex:1"><strong>${escHtml(sa.name)}</strong> ↔ <strong>${escHtml(sb.name)}</strong></span><button class="ico-btn del" onclick="removeSeparation(${a},${b})" style="font-size:11px;padding:2px 6px;">✕</button></div>`;
+  }).join('');
+}
+
+function updateSpeed(v){S.shuffleSpeed=parseInt(v);const el=document.getElementById('speed-val');if(el)el.textContent=v;save();}
+
+/* ════════════════════════════════════════════════════════
+   SHUFFLE (Stage 4 — Group-based)
+════════════════════════════════════════════════════════ */
+function fisherYates(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+
+function computeAssignment(){
+  const present=S.students.filter(s=>s.isPresent);
+  if(!present.length||!S.groups.length)return{};
+  const scope=S.groupCfg.shuffleScope;
+  const asgn={};
+
+  if(scope==='all'||scope==='full'){
+    const pool=fisherYates([...present]);
+    const hasLock=S.seatLocks&&Object.keys(S.seatLocks).length>0;
+    if(hasLock){
+      applySeatLockAssignment(pool,asgn);
+    } else if(S.groupCfg.genderBalance){
+      balancedDistribute(pool,S.groups,asgn); // fills asgn directly
+    } else {
+      evenDistribute(pool,S.groups,asgn);
+    }
+  } else if(scope==='within'){
+    // Shuffle seats within each group (keep group membership)
+    S.groups.forEach(g=>{
+      const total=g.rows*g.cols;
+      const members=[];
+      for(let i=0;i<total;i++){const sid=S.assignment[`${g.id}-${i}`];if(sid!=null){const s=present.find(x=>x.id===sid);if(s)members.push(s);}}
+      fisherYates(members).forEach((s,i)=>{ asgn[`${g.id}-${i}`]=s.id; });
+    });
+  } else if(scope==='between'){
+    // Swap entire groups (keep seat order within, shuffle which group gets which members)
+    const groupMembers=S.groups.map(g=>{
+      const total=g.rows*g.cols,members=[];
+      for(let i=0;i<total;i++){const sid=S.assignment[`${g.id}-${i}`];if(sid!=null){const s=present.find(x=>x.id===sid);if(s)members.push(s);}}
+      return members;
+    });
+    const shuffled=fisherYates([...groupMembers]);
+    S.groups.forEach((g,gi)=>{
+      const total=g.rows*g.cols,members=shuffled[gi]||[];
+      members.forEach((s,i)=>{if(i<total)asgn[`${g.id}-${i}`]=s.id;});
+    });
+  }
+
+  applySeparation(asgn);
+  return asgn;
+}
+
+function balancedDistribute(pool,groups,asgn){
+  const males=fisherYates(pool.filter(s=>s.gender==='M'));
+  const females=fisherYates(pool.filter(s=>s.gender==='F'));
+  const n=groups.length;
+  // Interleave: fill groups round-robin with alternating gender batches
+  const slots=groups.map(g=>({gId:g.id,total:g.rows*g.cols,students:[]}));
+  males.forEach((s,i)=>slots[i%n].students.push(s));
+  females.forEach((s,i)=>slots[(i+Math.ceil(n/2))%n].students.push(s));
+  slots.forEach(({gId,total,students})=>{
+    fisherYates(students).forEach((s,i)=>{if(i<total)asgn[`${gId}-${i}`]=s.id;});
+  });
+}
+
+/* 균등 배분: 17명 4모둠 → 4,4,4,5 처럼 가능한 한 균등하게 분배 */
+function evenDistribute(pool,groups,asgn){
+  const G=groups.length,N=pool.length;
+  if(!G||!N)return;
+  const base=Math.floor(N/G),extra=N%G;
+  // 어느 모둠에 +1명을 배정할지 랜덤으로 결정
+  const bonusGroups=new Set(fisherYates([...Array(G).keys()]).slice(0,extra));
+  let si=0;
+  groups.forEach((g,gi)=>{
+    const quota=base+(bonusGroups.has(gi)?1:0);
+    const totalSeats=g.rows*g.cols;
+    // 좌석 수보다 배정 인원이 많으면 좌석 한도까지만 배정
+    for(let i=0;i<Math.min(quota,totalSeats)&&si<pool.length;i++,si++){
+      asgn[`${g.id}-${i}`]=pool[si].id;
+    }
+  });
+}
+
+function applySeparation(asgn){
+  const{separation}=S.groupCfg;if(!separation.length)return;
+  // Build gId → [{key,sid}] map
+  const gMap={};
+  Object.entries(asgn).forEach(([key,sid])=>{
+    const gId=key.split('-')[0];if(!gMap[gId])gMap[gId]=[];gMap[gId].push({key,sid});
+  });
+  separation.forEach(({a,b})=>{
+    let gA=null,gB=null,keyA=null,keyB=null;
+    Object.entries(gMap).forEach(([gId,members])=>{
+      members.forEach(m=>{if(m.sid===a){gA=gId;keyA=m.key;}if(m.sid===b){gB=gId;keyB=m.key;}});
+    });
+    if(gA&&gA===gB&&keyB){
+      // Swap b into a different group
+      const others=Object.keys(gMap).filter(g=>g!==gA);
+      if(!others.length)return;
+      const tg=others[Math.floor(Math.random()*others.length)];
+      const tm=gMap[tg][Math.floor(Math.random()*gMap[tg].length)];
+      if(tm){[asgn[keyB],asgn[tm.key]]=[asgn[tm.key],asgn[keyB]];}
+    }
+  });
+}
+
+function startShuffle(){
+  if(S.animRunning)return;
+  const present=S.students.filter(s=>s.isPresent);
+  if(!present.length){toast('출석 학생이 없습니다!','var(--red)');return;}
+  if(!S.groups.length){toast('모둠을 먼저 설정해 주세요!','var(--red)');return;}
+  runShuffleAnim(computeAssignment());
+}
+
+let _shuffleSkip=false, _shuffleResolve=null;
+
+async function runShuffleAnim(newAsgn){
+  _shuffleSkip=false;
+  S.animRunning=true;
+  _auInit();
+  const overlay=document.getElementById('anim-overlay');
+  overlay.style.display='flex'; overlay.style.opacity='1'; document.body.style.overflow='hidden';
+  // 클릭 시 즉시 스킵
+  overlay.onclick=()=>{
+    _shuffleSkip=true;
+    if(_shuffleResolve){_shuffleResolve();_shuffleResolve=null;}
+    sndShuffleBgmStop();
+  };
+  await doCountdown();
+  if(!_shuffleSkip){sndShuffleBgm();}
+  await doShuffleVisual();
+  sndShuffleBgmStop();
+  overlay.onclick=null;
+  overlay.style.transition='opacity .25s'; overlay.style.opacity='0'; await sleep(260);
+  overlay.style.display='none'; overlay.style.transition=''; overlay.style.opacity='1'; document.body.style.overflow='';
+  S.assignment=newAsgn; S.hasResult=true; save(); renderGroupCanvas(); renderStats();
+  const rc=document.getElementById('result-card'); if(rc)rc.style.display='';
+  S.animRunning=false;
+  await sleep(100);
+  showSeatTada();
+}
+async function doCountdown(){
+  const wrap=document.getElementById('cdwrap'), numEl=document.getElementById('cd-num');
+  wrap.style.display='flex'; document.getElementById('sfwrap').style.display='none';
+  for(const[i,n] of [[2,3],[1,2],[0,1]]){
+    if(_shuffleSkip)break;
+    numEl.textContent=n;numEl.classList.remove('cd-anim');void numEl.offsetWidth;numEl.classList.add('cd-anim');
+    sndCountdown(i);await sleep(520);
+  }
+  if(!_shuffleSkip){sndCountdown(0);await sleep(220);}
+  wrap.style.display='none';
+}
+async function doShuffleVisual(){
+  if(_shuffleSkip){return;}
+  sndShuffleSweep();
+  const wrap=document.getElementById('sfwrap'), cardsEl=document.getElementById('sf-cards'), bar=document.getElementById('sf-bar');
+  wrap.style.display='flex'; bar.style.transition='none'; bar.style.width='0%';
+  const pool=fisherYates([...S.students.filter(s=>s.isPresent)]).slice(0,14);
+  cardsEl.innerHTML=''; pool.forEach(s=>{const card=document.createElement('div');card.className=`sf-card sf-${s.gender.toLowerCase()}`;card.textContent=s.name;card.style.cssText='left:170px;top:110px;transform:translate(-50%,-50%)';cardsEl.appendChild(card);});
+  const duration=Math.max(2000,S.shuffleSpeed*480); const start=performance.now();
+  bar.style.transition=`width ${duration}ms linear`; bar.style.width='100%';
+  function frame(now){
+    if(_shuffleSkip)return;
+    const t=(now-start)/1000;
+    cardsEl.querySelectorAll('.sf-card').forEach((card,i)=>{
+      const freq=0.9+i*0.13,amp=80+i*8;
+      const x=170+Math.cos(t*freq*Math.PI*2+i*0.7)*amp, y=110+Math.sin(t*freq*Math.PI+i*0.5)*amp*0.55;
+      card.style.left=`${x}px`; card.style.top=`${y}px`;
+      card.style.transform=`translate(-50%,-50%) rotate(${t*(120+i*18)}deg) scale(${0.85+0.15*Math.sin(t*2+i)})`;
+    });
+    if(performance.now()-start<duration && !_shuffleSkip)requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  await new Promise(resolve=>{_shuffleResolve=resolve;setTimeout(resolve,duration);});
+  _shuffleResolve=null;
+  wrap.style.display='none';
+}
+function revealSeats(){ drawGroupCanvas(); } // canvas redraws on assignment update
+function doConfetti(){
+  const canvas=document.getElementById('confetti-canvas'), ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight; canvas.style.display='block';
+  const colors=['#ffd700','#00e5ff','#ff6b9d','#4fc3f7','#c084fc','#4ade80','#fb923c'];
+  const ps=Array.from({length:130},()=>({x:Math.random()*canvas.width,y:-30-Math.random()*120,vx:(Math.random()-.5)*4.5,vy:3+Math.random()*5,rot:Math.random()*360,rv:(Math.random()-.5)*9,w:8+Math.random()*14,h:5+Math.random()*7,color:colors[Math.floor(Math.random()*colors.length)],alpha:1}));
+  let frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.rot+=p.rv;if(frame>55)p.alpha=Math.max(0,p.alpha-.025);ctx.save();ctx.globalAlpha=p.alpha;ctx.translate(p.x,p.y);ctx.rotate(p.rot*Math.PI/180);ctx.fillStyle=p.color;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();});
+    if(++frame<100)requestAnimationFrame(draw);else{ctx.clearRect(0,0,canvas.width,canvas.height);canvas.style.display='none';}
+  }
+  requestAnimationFrame(draw);
+}
+function printResult(){if(!S.hasResult){toast('먼저 셔플을 실행해 주세요!');return;}window.print();}
+
+/* ════════════════════════════════════════════════════════
+   PICK TAB — CAPSULE MACHINE (Stage 3)
+════════════════════════════════════════════════════════ */
+const CW=500, CH=430, CCX=250, CCY=192, CR=166;
+const CAP_COLORS=['#ff4757','#ff6348','#ffa502','#f9ca24','#2ed573','#7bed9f','#1e90ff','#70a1ff','#5352ed','#a29bfe','#fd79a8','#e17055','#00b894','#00cec9','#6c5ce7','#e84393','#fdcb6e','#0984e3'];
+let caps=[], pickRaf=null, pickState='idle', shakeEnd=0, selectEnd=0, fallStart=0, flashAlpha=0;
+let winnerStudent=null, winnerCap=null, manualMode=false, _manualPickId=null;
+let _mShake=0, _mShakeT=0; // machine visual shake
+let _skipReveal=false;
+
+function getEligible(){
+  let list=S.students.filter(s=>s.isPresent);
+  if(S.pick.noRepeat){const picked=new Set(S.pick.history.map(h=>h.id));list=list.filter(s=>!picked.has(s.id));}
+  return list;
+}
+
+function initCapsules(){
+  const eligible=getEligible();
+  const n=eligible.length;
+  const r=n<=12?22:n<=20?20:n<=30?17:15;
+  caps=[];
+  eligible.forEach((s,i)=>{
+    let x,y,tries=0;
+    do{const a=Math.random()*Math.PI*2,d=(0.1+Math.random()*0.72)*(CR-r-4);x=CCX+Math.cos(a)*d;y=CCY+Math.sin(a)*d*0.88;tries++;}
+    while(tries<60&&caps.some(c=>Math.hypot(c.x-x,c.y-y)<r*2.1));
+    caps.push({id:s.id,x,y,vx:0,vy:0,r,color:CAP_COLORS[i%CAP_COLORS.length],num:i+1,alpha:1,scale:1});
+  });
+}
+
+function initPickTab(){
+  const canvas=document.getElementById('capsule-canvas'); if(!canvas)return;
+  if(!canvas._hiDpi){
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=CW*dpr; canvas.height=CH*dpr;
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    canvas._hiDpi=true;
+  }
+  canvas.onclick=handleCanvasClick;
+  // 레이아웃 완성 후 크기 계산 (requestAnimationFrame으로 defer)
+  requestAnimationFrame(resizePickCanvas);
+  initCapsules(); startPickLoop();
+  updatePickHint();
+}
+function stopPickLoop(){if(pickRaf){cancelAnimationFrame(pickRaf);pickRaf=null;}}
+function startPickLoop(){
+  stopPickLoop();
+  const canvas=document.getElementById('capsule-canvas'); if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  function loop(){updateCaps();drawMachine(ctx);pickRaf=requestAnimationFrame(loop);}
+  pickRaf=requestAnimationFrame(loop);
+}
+
+function updateCaps(){
+  const now=performance.now();
+  const shaking=pickState==='shaking', selecting=pickState==='selecting', falling=pickState==='falling';
+
+  // ── State transitions ──
+  if(shaking&&now>=shakeEnd){pickState='selecting';selectEnd=now+1500;sndDrumrollStop();sndHeartbeat(1.5);}
+  if(selecting&&now>=selectEnd){pickState='falling';}
+  // Extra downward pull for falling winner (position update & exit handled in forEach)
+  if(falling&&winnerCap&&!winnerCap.exiting){
+    winnerCap.vy+=1.4;   // strong downward pull
+    winnerCap.vx*=0.88;  // dampen horizontal
+  }
+
+  // ── Machine shake visual ──
+  if(shaking){_mShakeT+=0.018;_mShake=Math.sin(_mShakeT*6.2)*3*(Math.random()*.3+.85);}
+  else{_mShake*=0.85;_mShakeT=0;}
+
+  // ── Per-capsule physics ──
+  caps.forEach(c=>{
+    if(c.exiting){c.y+=8;c.scale=Math.max(0,c.scale-.06);c.alpha=c.scale;if(c.scale<=0)c.gone=true;return;}
+    if(c.gone)return;
+    // 자동뽑기 전 정지 상태: 물리 적용 안 함
+    if(pickState==='idle')return;
+
+    // Selecting: all caps stay fully visible (no winner hint)
+    if(selecting){c.alpha=1;c.glow=false;}
+    // Non-winner caps during falling: coast to stop
+    if(falling&&c!==winnerCap){c.vx*=0.95;c.vy*=0.95;c.x+=c.vx;c.y+=c.vy;return;}
+
+    // Standard gravity + movement
+    c.vy+=shaking?0.05:0.12;
+    if(shaking&&Math.random()<.4){c.vx+=(Math.random()-.5)*12;c.vy+=(Math.random()-.5)*12;}
+    c.vx*=shaking?.94:.986;c.vy*=shaking?.94:.986;
+    const spd=Math.hypot(c.vx,c.vy);if(spd>16){c.vx=c.vx/spd*16;c.vy=c.vy/spd*16;}
+    c.x+=c.vx;c.y+=c.vy;
+
+    // ── Winner cap falling: guide to tube, bypass wall bounce ──
+    if(falling&&c===winnerCap){
+      c.vx+=(CCX-c.x)*0.08; // pull toward tube center-x
+      c.vx*=0.85;
+      // Exit check AFTER position update (fixes wall-bounce-prevents-exit bug)
+      if(c.y>CCY+CR-c.r){
+        pickState='flash';flashAlpha=1;c.exiting=true;
+      }
+      return; // skip sphere wall bounce for winner
+    }
+
+    // Wall bounce (sphere) — normal caps only
+    const dx=c.x-CCX,dy=c.y-CCY,dist=Math.hypot(dx,dy);
+    if(dist+c.r>CR){
+      const nx=dx/dist,ny=dy/dist;
+      c.x=CCX+nx*(CR-c.r-.5);c.y=CCY+ny*(CR-c.r-.5);
+      const dot=c.vx*nx+c.vy*ny;c.vx-=2*dot*nx*.62;c.vy-=2*dot*ny*.62;
+      if(Math.abs(dot)>3)sndClick();
+    }
+    if(pickState==='idle'){const ddx=c.x-CCX,ddy=c.y-CCY;c.vx+=ddy*.0009;c.vy-=ddx*.0009;}
+  });
+
+  // ── Capsule-capsule repulsion ──
+  for(let i=0;i<caps.length;i++)for(let j=i+1;j<caps.length;j++){
+    const a=caps[i],b=caps[j];if(a.gone||b.gone)continue;
+    const dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy),min=a.r+b.r;
+    if(d<min&&d>.01){const nx=dx/d,ny=dy/d,f=(min-d)*.45;a.vx+=nx*f*.5;a.vy+=ny*f*.5;b.vx-=nx*f*.5;b.vy-=ny*f*.5;const push=(min-d)*.5;a.x+=nx*push*.5;a.y+=ny*push*.5;b.x-=nx*push*.5;b.y-=ny*push*.5;}
+  }
+}
+
+function drawMachine(ctx){
+  ctx.clearRect(0,0,CW,CH);
+
+  // Dark vignette background
+  const vg=ctx.createRadialGradient(CCX,CCY,60,CCX,CCY,CW*.7);
+  vg.addColorStop(0,'#07102a');vg.addColorStop(1,'#020610');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,CW,CH);
+
+  // Machine shake transform
+  if(Math.abs(_mShake)>.05){ctx.save();ctx.translate(CCX,CH);ctx.rotate(_mShake*Math.PI/180);ctx.translate(-CCX,-CH);}
+
+  const now=Date.now(),shaking=pickState==='shaking',selecting=pickState==='selecting';
+
+  // ── Pedestal (base) ──
+  ctx.save();
+  const pb=ctx.createLinearGradient(CCX-90,CH-72,CCX+90,CH-18);
+  pb.addColorStop(0,'#1a2b4a');pb.addColorStop(.5,'#253c65');pb.addColorStop(1,'#1a2b4a');
+  ctx.fillStyle=pb;ctx.beginPath();ctx.roundRect(CCX-90,CH-72,180,60,10);ctx.fill();
+  // Gold trim top
+  const gTrim=ctx.createLinearGradient(CCX-90,CH-74,CCX+90,CH-70);
+  gTrim.addColorStop(0,'#a07800');gTrim.addColorStop(.5,'#ffd700');gTrim.addColorStop(1,'#a07800');
+  ctx.fillStyle=gTrim;ctx.fillRect(CCX-90,CH-74,180,4);
+  ctx.restore();
+
+  // ── Tube (exit chute) ──
+  const tubeTop=CCY+CR-6,tubeBot=CH-72;
+  ctx.save();
+  const tg=ctx.createLinearGradient(CCX-16,0,CCX+16,0);
+  tg.addColorStop(0,'rgba(0,80,120,.3)');tg.addColorStop(.5,'rgba(0,180,255,.15)');tg.addColorStop(1,'rgba(0,80,120,.3)');
+  ctx.fillStyle=tg;ctx.beginPath();ctx.roundRect(CCX-16,tubeTop,32,tubeBot-tubeTop,4);ctx.fill();
+  ctx.strokeStyle='rgba(0,200,255,.2)';ctx.lineWidth=1;ctx.stroke();
+  ctx.restore();
+
+  // ── Gold frame ring (outer) ──
+  ctx.save();
+  ctx.beginPath();ctx.arc(CCX,CCY,CR+8,0,Math.PI*2);
+  const goldRing=ctx.createLinearGradient(CCX-CR,CCY-CR,CCX+CR,CCY+CR);
+  goldRing.addColorStop(0,'rgba(255,215,0,.7)');goldRing.addColorStop(.5,'rgba(255,215,0,.25)');goldRing.addColorStop(1,'rgba(255,215,0,.7)');
+  ctx.strokeStyle=goldRing;ctx.lineWidth=shaking?5:3.5;
+  if(shaking){ctx.shadowColor='rgba(255,215,0,.7)';ctx.shadowBlur=18;}
+  ctx.stroke();ctx.shadowBlur=0;
+  ctx.restore();
+
+  // ── Glass dome — clip & fill ──
+  ctx.save();ctx.beginPath();ctx.arc(CCX,CCY,CR,0,Math.PI*2);ctx.clip();
+
+  // Interior gradient
+  const inner=ctx.createRadialGradient(CCX+30,CCY-30,10,CCX,CCY,CR);
+  inner.addColorStop(0,'rgba(18,35,70,0.92)');inner.addColorStop(.7,'rgba(8,16,38,0.96)');inner.addColorStop(1,'rgba(4,8,20,0.99)');
+  ctx.fillStyle=inner;ctx.fillRect(0,0,CW,CH);
+
+  // Draw capsules inside dome
+  caps.forEach(c=>{if(!c.gone)drawCap(ctx,c);});
+
+  // Flash overlay
+  if(pickState==='flash'&&flashAlpha>0){
+    ctx.fillStyle=`rgba(255,255,255,${flashAlpha})`;ctx.fillRect(0,0,CW,CH);
+    flashAlpha-=0.065;if(flashAlpha<=0){flashAlpha=0;triggerReveal();}
+  }
+
+  // Dome sheen (glass highlight)
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();ctx.arc(CCX,CCY,CR,0,Math.PI*2);ctx.clip();
+  const shine=ctx.createRadialGradient(CCX-CR*.42,CCY-CR*.46,0,CCX-CR*.2,CCY-CR*.2,CR*.7);
+  shine.addColorStop(0,'rgba(255,255,255,.11)');shine.addColorStop(.5,'rgba(255,255,255,.03)');shine.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=shine;ctx.fillRect(0,0,CW,CH);
+  ctx.restore();
+
+  // ── Dome border (cyan/gold) ──
+  ctx.save();
+  ctx.beginPath();ctx.arc(CCX,CCY,CR,0,Math.PI*2);
+  const pulse=.5+.5*Math.sin(now*.012);
+  ctx.strokeStyle=selecting?`rgba(255,215,0,${.6+.4*pulse})`
+                  :shaking?`rgba(255,215,0,${.4+.4*pulse})`
+                  :'rgba(0,229,255,.5)';
+  ctx.lineWidth=2;ctx.stroke();
+  if(selecting){ctx.shadowColor='rgba(255,215,0,.6)';ctx.shadowBlur=22;ctx.stroke();}
+  ctx.shadowBlur=0;ctx.restore();
+
+  // Manual mode ring
+  if(manualMode&&pickState==='idle'){
+    ctx.beginPath();ctx.arc(CCX,CCY,CR+14,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(255,215,0,${.25+.18*Math.sin(now*.004)})`;ctx.lineWidth=2;ctx.stroke();
+  }
+
+  // Restore shake transform
+  if(Math.abs(_mShake)>.05)ctx.restore();
+}
+
+function drawCap(ctx,c){
+  const s=c.scale||1,r=c.r*s;
+  ctx.save();ctx.globalAlpha=c.alpha||1;
+  ctx.translate(c.x,c.y);if(c.rot)ctx.rotate(c.rot);
+
+  // Pill / oval shape
+  const rw=r*1.18,rh=r;
+  ctx.beginPath();ctx.ellipse(0,0,rw,rh,0,0,Math.PI*2);
+
+  // Body gradient
+  const bg=ctx.createRadialGradient(-rw*.3,-rh*.35,0,0,0,rw);
+  const col=c.color;
+  bg.addColorStop(0,lerpColor(col,'#ffffff',.42));
+  bg.addColorStop(.55,col);
+  bg.addColorStop(1,lerpColor(col,'#000000',.35));
+  ctx.fillStyle=bg;ctx.fill();
+
+  // Winner glow
+  if(c.glow){
+    ctx.strokeStyle=col;ctx.lineWidth=3;
+    ctx.shadowColor=col;ctx.shadowBlur=16+8*Math.sin(Date.now()*.012);
+    ctx.stroke();ctx.shadowBlur=0;
+  }
+
+  // Surface highlight (top-left specular)
+  ctx.beginPath();ctx.ellipse(-rw*.28,-rh*.3,rw*.3,rh*.2,-.5,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.28)';ctx.fill();
+
+  // Capsule middle line
+  ctx.beginPath();ctx.moveTo(0,-rh);ctx.lineTo(0,rh);
+  ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=1.5;ctx.stroke();
+
+  // Number
+  ctx.font=`900 ${Math.round(r*.72)}px sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillText(c.num,1,2);
+  ctx.fillStyle='rgba(255,255,255,.95)';ctx.fillText(c.num,0,0);
+
+  ctx.restore();
+}
+
+function lerpColor(hex,to,t){
+  const r1=parseInt(hex.slice(1,3),16),g1=parseInt(hex.slice(3,5),16),b1=parseInt(hex.slice(5,7),16);
+  const r2=to==='#ffffff'?255:0,g2=to==='#ffffff'?255:0,b2=to==='#ffffff'?255:0;
+  return`rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+}
+
+function handleCanvasClick(e){
+  if(!manualMode||pickState!=='idle')return;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const sx=500/rect.width, sy=430/rect.height;
+  const cx=(e.clientX-rect.left)*sx, cy=(e.clientY-rect.top)*sy;
+  const hit=caps.find(c=>!c.gone&&Math.hypot(c.x-cx,c.y-cy)<=c.r);
+  if(!hit)return;
+  // Always record the physically clicked cap for the falling animation
+  _manualPickId=hit.id;
+  doPickSequence();
+}
+
+function startAutoPick(){
+  if(pickState!=='idle')return;
+  _auInit();
+  const el=getEligible();
+  if(!el.length){toast(S.pick.noRepeat&&S.pick.history.length?'모두 뽑혔습니다! 리셋해 주세요.':'출석 학생이 없습니다!','var(--red)');return;}
+  doPickSequence();
+}
+
+function doPickSequence(){
+  if(pickState!=='idle')return;
+  _auInit();
+  const eligible=getEligible();
+  if(!eligible.length){toast('뽑을 학생이 없습니다!','var(--red)');return;}
+  // In manual mode: clicked cap is stored in _manualPickId for physics; pickWinner uses it for student in normal mode
+  const clickedCap=_manualPickId!==null?caps.find(c=>c.id===_manualPickId):null;
+  winnerStudent=pickWinner(eligible); // clears _manualPickId internally
+  // Winner cap: use clicked cap if in manual mode, otherwise use student's own cap
+  winnerCap=clickedCap||caps.find(c=>c.id===winnerStudent.id);
+  if(!winnerCap&&caps.length){winnerCap=caps[Math.floor(Math.random()*caps.length)];}
+
+  sndPickBgm();
+
+  if(!S.pkCfg.animOn){
+    // Skip animation — fade in overlay immediately
+    pickState='revealing';
+    showRevealOverlay(winnerStudent);
+    return;
+  }
+  if(S.pkCfg.instantMode){
+    // 즉시 결과 모드: 캡슐 흔들기 생략, 결과 화면 바로 표시
+    pickState='revealing';
+    showRevealOverlay(winnerStudent);
+    return;
+  }
+
+  const totalMs=(S.pkCfg.speed/5)*2000; // 2000ms at speed=5
+  pickState='shaking';
+  shakeEnd=performance.now()+totalMs;
+  sndDrumroll(totalMs/1000);
+}
+
+function triggerReveal(){
+  pickState='revealing';
+  winnerCap=null;
+  setTimeout(()=>showRevealOverlay(winnerStudent),220);
+}
+
+/* ─── Reveal Overlay ── */
+async function showRevealOverlay(student){
+  _skipReveal=false;
+  const overlay=document.getElementById('reveal-overlay');
+  const capWrap=document.getElementById('rcap-wrap');
+  const capTop=document.getElementById('rcap-top');
+  const capBot=document.getElementById('rcap-bot');
+  const nameEl=document.getElementById('reveal-name');
+  const labelEl=document.getElementById('reveal-label');
+  const subEl=document.getElementById('reveal-sub');
+  const closeBtn=document.getElementById('reveal-close');
+  const spotlight=document.getElementById('rev-spotlight');
+
+  // Click anywhere on overlay to skip animation
+  overlay.onclick=(e)=>{if(e.target!==closeBtn)_skipReveal=true;};
+
+  const noAnim=!S.pkCfg.animOn;
+  const spd=S.pkCfg.speed; // 1-10
+
+  // Capsule color setup
+  const capObj=caps.find(c=>c.id===student.id);
+  const capColor=capObj?.color||'#ff4757';
+  const capColorDark=lerpColor(capColor,'#000000',.3);
+  capTop.style.background=`linear-gradient(160deg,${lerpColor(capColor,'#ffffff',.25)},${capColor})`;
+  capBot.style.background=`linear-gradient(160deg,${capColor},${capColorDark})`;
+
+  const tadaEl=document.getElementById('reveal-tada');
+  // Reset state
+  capWrap.classList.remove('rcap-open');
+  nameEl.style.opacity='0';nameEl.style.transform='scale(1)';nameEl.classList.remove('name-pop','winner-entrance','t-cursor');
+  labelEl.style.opacity='0';subEl.style.opacity='0';closeBtn.style.opacity='0';
+  nameEl.textContent='??';if(spotlight)spotlight.classList.remove('on');
+  if(tadaEl){tadaEl.style.transition='none';tadaEl.style.opacity='0';tadaEl.style.transform='scale(0.4) translateY(20px)';tadaEl.classList.remove('show');}
+
+  overlay.style.display='flex';overlay.style.opacity='0';
+  overlay.style.transition='opacity .3s';
+  await sleep(20);overlay.style.opacity='1';
+
+  if(noAnim){
+    // Instant reveal with flash + tada
+    if(tadaEl){
+      tadaEl.style.transition='transform .35s cubic-bezier(.34,1.5,.64,1), opacity .3s';
+      tadaEl.style.transform='scale(1)';tadaEl.style.opacity='1';
+      setTimeout(()=>{if(tadaEl){tadaEl.style.transition='opacity .5s';tadaEl.style.opacity='0';}},900);
+    }
+    _triggerRevealFlash();
+    nameEl.textContent=student.name;nameEl.style.opacity='1';
+    void nameEl.offsetWidth;nameEl.classList.add('winner-entrance');
+    labelEl.style.opacity='1';subEl.style.opacity='1';
+    subEl.textContent=student.gender==='M'?'남학생 ♂':'여학생 ♀';
+    if(spotlight)spotlight.classList.add('on');
+    closeBtn.style.opacity='1';
+    if(S.pkCfg.particleOn)doConfetti();
+    sndPickBgmStop();sndRevealBgm();
+    return;
+  }
+
+  // Helper: sleep that short-circuits when _skipReveal is set
+  const ws=(ms)=>_skipReveal?Promise.resolve():sleep(ms);
+
+  // Helper: instantly show final result (called when skipping)
+  const showInstant=()=>{
+    capWrap.classList.add('rcap-open');
+    nameEl.classList.remove('t-cursor');
+    nameEl.textContent=student.name;nameEl.style.opacity='1';
+    void nameEl.offsetWidth;nameEl.classList.add('winner-entrance');
+    labelEl.style.opacity='1';
+    subEl.style.opacity='1';
+    subEl.textContent=student.gender==='M'?'남학생 ♂':'여학생 ♀';
+    if(spotlight)spotlight.classList.add('on');
+    if(tadaEl){tadaEl.style.transition='none';tadaEl.style.opacity='0';}
+    _triggerRevealFlash();
+    sndPickBgmStop();sndRevealBgm();
+    if(S.pkCfg.particleOn)doConfetti();
+    closeBtn.style.opacity='1';
+    overlay.onclick=null;
+  };
+
+  // ── Stage 4: drum-roll + capsule split ──
+  const drumRolls=Math.max(8,Math.round(22*(1-(spd-1)/9)));
+  const eligible=S.students.filter(s=>s.isPresent);
+  await ws(300);
+
+  // Drum roll fake names
+  for(let i=0;i<drumRolls;i++){
+    if(_skipReveal)break;
+    const fake=eligible[Math.floor(Math.random()*eligible.length)];
+    nameEl.textContent=fake.name;nameEl.style.opacity='1';
+    await ws(Math.max(35,60+i*Math.max(6,18-spd*1.5)));
+  }
+  if(_skipReveal){showInstant();return;}
+  await ws(120);
+
+  capWrap.classList.add('rcap-open');
+  await ws(350);
+
+  // ── Stage 5: typing + reveal ──
+  if(_skipReveal){showInstant();return;}
+  nameEl.style.opacity='1';
+  nameEl.classList.add('t-cursor');
+  let typed='';
+  for(const ch of student.name){
+    if(_skipReveal)break;
+    typed+=ch;nameEl.textContent=typed;
+    await ws(Math.max(60,180-spd*14));
+  }
+  if(_skipReveal){showInstant();return;}
+  nameEl.classList.remove('t-cursor');
+  nameEl.textContent=student.name;
+
+  // 짜잔! tada banner
+  if(tadaEl){
+    tadaEl.style.transition='transform .45s cubic-bezier(.34,1.5,.64,1), opacity .35s';
+    tadaEl.style.transform='scale(1)';tadaEl.style.opacity='1';
+    tadaEl.classList.remove('show');void tadaEl.offsetWidth;tadaEl.classList.add('show');
+  }
+  await ws(400);
+
+  // Flash + pop + shake reveal
+  _triggerRevealFlash();
+  void nameEl.offsetWidth;nameEl.classList.add('winner-entrance');
+  const inner=document.getElementById('reveal-inner');
+  if(inner){inner.classList.remove('inner-shake');void inner.offsetWidth;inner.classList.add('inner-shake');}
+  labelEl.style.opacity='1';
+  subEl.style.opacity='1';
+  subEl.textContent=student.gender==='M'?'남학생 ♂':'여학생 ♀';
+  if(spotlight)spotlight.classList.add('on');
+
+  sndPickBgmStop();sndRevealBgm();
+  if(S.pkCfg.particleOn)doConfetti();
+
+  // Fade out tada banner
+  await ws(300);
+  if(tadaEl){tadaEl.style.transition='opacity .5s';tadaEl.style.opacity='0';}
+  await ws(200);
+  closeBtn.style.opacity='1';
+  overlay.onclick=null;
+}
+
+function closeReveal(){
+  _skipReveal=false;
+  const overlay=document.getElementById('reveal-overlay');
+  overlay.onclick=null;
+  overlay.style.transition='opacity .2s';overlay.style.opacity='0';
+  setTimeout(()=>{overlay.style.display='none';overlay.style.opacity='1';},220);
+  const sp=document.getElementById('rev-spotlight');if(sp)sp.classList.remove('on');
+  sndDrumrollStop();sndPickBgmStop();sndRevealBgmStop();
+  if(winnerStudent){
+    addToHistory(winnerStudent);
+    if(S.pick.noRepeat) caps=caps.filter(c=>c.id!==winnerStudent.id);
+    else{const c=caps.find(x=>x.id===winnerStudent.id);if(c){c.gone=false;c.alpha=1;c.scale=1;c.exiting=false;c.glow=false;c.x=CCX+(Math.random()-.5)*80;c.y=CCY+(Math.random()-.5)*80;c.vx=(Math.random()-.5)*2;c.vy=-3;}}
+    winnerStudent=null;
+  }
+  caps=caps.filter(c=>!c.gone);winnerCap=null;
+  pickState='idle';updatePickHint();
+}
+
+function addToHistory(student){
+  const now=new Date();
+  const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  S.pick.history.push({id:student.id,name:student.name,gender:student.gender,time});
+  const s=S.students.find(x=>x.id===student.id); if(s)s.pickCount++;
+  save(); renderPickHistory(); renderStudents();
+}
+
+function renderPickHistory(){
+  const el=document.getElementById('pick-history-list'), badge=document.getElementById('history-badge');
+  if(!el)return;
+  const h=S.pick.history;
+  if(badge)badge.textContent=`${h.length}명`;
+  if(!h.length){el.innerHTML='<span style="color:var(--txt2)">뽑힌 학생 없음</span>';return;}
+  el.innerHTML=h.slice().reverse().map((item,i)=>{
+    const gColor=item.gender==='M'?'var(--male)':'var(--female)';
+    const gIcon=item.gender==='M'?'♂':'♀';
+    return`<div class="history-item">
+      <span class="h-num">${h.length-i}</span>
+      <span class="h-name" style="color:${gColor}">${escHtml(item.name)}</span>
+      <span style="font-size:10px;color:${gColor};opacity:.7;">${gIcon}</span>
+      <span class="h-time">${item.time}</span>
+    </div>`;
+  }).join('');
+  updatePickHint();
+}
+
+function renderPickRoster(){
+  const tbl=document.getElementById('pick-roster-table'), badge=document.getElementById('roster-badge');
+  if(!tbl)return;
+  const students=[...S.students].sort((a,b)=>a.id-b.id);
+  if(badge)badge.textContent=`${students.length}명`;
+  if(!students.length){tbl.innerHTML='<tr><td style="color:var(--txt2);font-size:12px;padding:6px 0;">학생 없음</td></tr>';return;}
+  const picked=new Set(S.pick.history.map(h=>h.id));
+  tbl.innerHTML=`<thead><tr><th>번호</th><th>성별</th><th>이름</th></tr></thead><tbody>${
+    students.map(s=>{
+      const gCls=s.gender==='M'?'roster-gender-m':'roster-gender-f';
+      const gIcon=s.gender==='M'?'♂':'♀';
+      const absCls=picked.has(s.id)&&S.pick.noRepeat?'roster-absent':'';
+      return`<tr class="${absCls}"><td><span class="roster-num">${s.id}</span></td><td class="${gCls}">${gIcon}</td><td>${escHtml(s.name)}</td></tr>`;
+    }).join('')
+  }</tbody>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   PINBALL ORDER PICKER  (순서 정하기 탭)
+════════════════════════════════════════════════════════ */
+const PB_COLORS=[
+  '#FF6B6B','#FFD93D','#6BCB77','#4D96FF','#C77DFF','#FF9F1C',
+  '#2EC4B6','#F72585','#4CC9F0','#FF8C42','#B5EF8A','#FF5CA2',
+  '#FF4500','#7CFC00','#1E90FF','#FF69B4','#00FA9A','#FFC300',
+  '#DC143C','#00BFFF'
+];
+
+const _PB={
+  cv:null,cx:null,dpr:1,
+  CW:1040,CH:1800,LAND_Y:1520,
+  PEG_R:12,BALL_R:24,GRAVITY:0.52,MAX_SPD:22,
+  PEG_DAMP:0.72,WALL_DAMP:0.74,JITTER:0.44,
+  balls:[],particles:[],landed:[],queue:[],
+  pegs:[],gates:[],bumpers:[],deflectors:[],
+  animId:null,bgmCtx:null,bgmTimer:null,
+  numSlots:6,active:false,_ready:false,startTime:0
+};
+
+function pbSetupCanvas(){
+  const cv=document.getElementById('order-canvas'); if(!cv)return;
+  _PB.cv=cv;
+  const dpr=Math.min(window.devicePixelRatio||1,2); _PB.dpr=dpr;
+  cv.width=_PB.CW*dpr; cv.height=_PB.CH*dpr;
+  _PB.cx=cv.getContext('2d'); _PB.cx.scale(dpr,dpr);
+  _PB._ready=true;
+  pbScaleCanvas();
+  pbBuildPegs();
+  pbBuildStructures();
+}
+
+function pbScaleCanvas(){
+  const cv=_PB.cv||document.getElementById('order-canvas'); if(!cv)return;
+  const headerH=document.querySelector('header')?.offsetHeight||62;
+  const availH=window.innerHeight-headerH-24;
+  const availW=window.innerWidth-(document.querySelector('.order-left')?.offsetWidth||220)-30;
+  const scaleH=availH/_PB.CH;
+  const scaleW=availW/_PB.CW;
+  const scale=Math.min(scaleH,scaleW,1);
+  cv.style.width=Math.round(_PB.CW*scale)+'px';
+  cv.style.height=Math.round(_PB.CH*scale)+'px';
+}
+
+function pbActivate(){
+  pbSetupCanvas();
+  _PB.numSlots=Math.max(S.students.length,1);
+  pbDraw();
+}
+
+function pbDeactivate(){
+  if(_PB.animId){cancelAnimationFrame(_PB.animId);_PB.animId=null;}
+  pbStopBGM();
+}
+
+function pbBuildPegs(){
+  _PB.pegs=[];
+  const startY=220,rowH=80,colW=116,rows=15;
+  for(let r=0;r<rows;r++){
+    const y=startY+r*rowH, even=r%2===0;
+    const cnt=even?8:7, x0=even?colW/2:colW;
+    for(let c=0;c<cnt;c++) _PB.pegs.push({x:x0+c*colW,y});
+  }
+}
+
+function pbBuildStructures(){
+  // 회전문 (2x 스케일)
+  _PB.gates=[
+    {cx:520,cy:620,len:144,angle:Math.PI/4,speed:0.022,color:'#FFD93D',thickness:10,flash:0},
+    {cx:270,cy:920,len:124,angle:-Math.PI/3,speed:-0.026,color:'#FF6B6B',thickness:10,flash:0},
+    {cx:770,cy:920,len:124,angle:Math.PI/3,speed:0.030,color:'#6BCB77',thickness:10,flash:0},
+    {cx:520,cy:1200,len:152,angle:0,speed:-0.021,color:'#C77DFF',thickness:10,flash:0},
+  ];
+  // 범퍼 (2x 스케일)
+  _PB.bumpers=[
+    {x:330,y:740,r:36,color:'#FF9F1C',flash:0},
+    {x:710,y:740,r:36,color:'#FF9F1C',flash:0},
+    {x:520,y:1060,r:40,color:'#F72585',flash:0},
+  ];
+  // 편향판 제거 (공이 자연스럽게 내려가도록)
+  _PB.deflectors=[];
+}
+
+function pbSpawnSparkle(x,y,color){
+  for(let i=0;i<18;i++){
+    const ang=(Math.PI*2*i/18)+Math.random()*.35, spd=5+Math.random()*10;
+    _PB.particles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd-4,life:1,color,r:3+Math.random()*5});
+  }
+}
+
+function pbClosestOnSeg(ax,ay,bx,by,px,py){
+  const dx=bx-ax,dy=by-ay,len2=dx*dx+dy*dy;
+  if(len2<0.001)return{x:ax,y:ay};
+  let t=((px-ax)*dx+(py-ay)*dy)/len2;
+  t=Math.max(0,Math.min(1,t));
+  return{x:ax+t*dx,y:ay+t*dy};
+}
+
+function pbCollideSegment(b,ax,ay,bx,by,thickness){
+  const cp=pbClosestOnSeg(ax,ay,bx,by,b.x,b.y);
+  const dx=b.x-cp.x,dy=b.y-cp.y,d=Math.hypot(dx,dy),md=_PB.BALL_R+thickness;
+  if(d<md&&d>0.001){
+    const nx=dx/d,ny=dy/d;
+    b.x+=nx*(md-d); b.y+=ny*(md-d);
+    const dot=b.vx*nx+b.vy*ny;
+    if(dot<0){
+      b.vx-=2*dot*nx; b.vy-=2*dot*ny;
+      const spd=Math.hypot(b.vx,b.vy)*_PB.PEG_DAMP;
+      const na=Math.atan2(b.vy,b.vx)+(Math.random()-.5)*_PB.JITTER;
+      b.vx=Math.cos(na)*spd; b.vy=Math.sin(na)*spd;
+    }
+    return true;
+  }
+  return false;
+}
+
+function pbUpdate(){
+  for(let i=_PB.particles.length-1;i>=0;i--){
+    const p=_PB.particles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.36;p.life-=.025;
+    if(p.life<=0)_PB.particles.splice(i,1);
+  }
+  for(const g of _PB.gates){g.angle+=g.speed;if(g.flash>0)g.flash--;}
+  for(const bmp of _PB.bumpers){if(bmp.flash>0)bmp.flash--;}
+
+  const elapsed=_PB.startTime?(Date.now()-_PB.startTime)/1000:0;
+  // 시간 경과에 따른 중력 증폭 (15초 후부터 점진적으로 강해짐)
+  const gravBoost=elapsed>15?Math.min(1+((elapsed-15)/8)*2,4):1;
+  const active=_PB.balls.filter(b=>!b.landed);
+  for(const b of active){
+    // ─── 27초 초과 시 강제 착지 ───
+    if(elapsed>27){pbLandBall(b);continue;}
+
+    // ─── 공 막힘 방지 (Anti-stuck): 20프레임마다 18px 미만 하강 시 강제 킥 ───
+    b._sc=(b._sc||0)+1;
+    if(b._sc%20===0){
+      const moved=b.y-(b._sy||0);
+      if(moved<18){
+        b.vy=Math.max(b.vy,16+Math.random()*10);
+        b.vx=(Math.random()-.5)*5;
+      }
+      b._sy=b.y;
+    }
+
+    b.vy+=_PB.GRAVITY*gravBoost;
+    const spd=Math.hypot(b.vx,b.vy);
+    if(spd>_PB.MAX_SPD){b.vx=b.vx/spd*_PB.MAX_SPD;b.vy=b.vy/spd*_PB.MAX_SPD;}
+    b.x+=b.vx;b.y+=b.vy;
+    if(b.x-_PB.BALL_R<0){b.x=_PB.BALL_R;b.vx=Math.abs(b.vx)*_PB.WALL_DAMP;}
+    if(b.x+_PB.BALL_R>_PB.CW){b.x=_PB.CW-_PB.BALL_R;b.vx=-Math.abs(b.vx)*_PB.WALL_DAMP;}
+    for(const p of _PB.pegs){
+      const dx=b.x-p.x,dy=b.y-p.y,d=Math.hypot(dx,dy),md=_PB.BALL_R+_PB.PEG_R;
+      if(d<md&&d>.001){
+        const nx=dx/d,ny=dy/d;
+        b.x+=nx*(md-d);b.y+=ny*(md-d);
+        const dot=b.vx*nx+b.vy*ny;
+        if(dot<0){
+          b.vx-=2*dot*nx;b.vy-=2*dot*ny;
+          const ns=Math.hypot(b.vx,b.vy)*_PB.PEG_DAMP;
+          const na=Math.atan2(b.vy,b.vx)+(Math.random()-.5)*_PB.JITTER;
+          b.vx=Math.cos(na)*ns;b.vy=Math.sin(na)*ns;
+        }
+      }
+    }
+    for(const g of _PB.gates){
+      const cos=Math.cos(g.angle),sin=Math.sin(g.angle);
+      const ax=g.cx-cos*g.len,ay=g.cy-sin*g.len;
+      const bx=g.cx+cos*g.len,by=g.cy+sin*g.len;
+      if(pbCollideSegment(b,ax,ay,bx,by,g.thickness)){
+        g.flash=8;
+        // 회전 방향으로 수평 충격 (역전 유발), 위쪽으로 너무 올리지 않도록 제한
+        const push=Math.sign(g.speed)*Math.abs(g.speed)*g.len*1.4;
+        b.vx=Math.max(-_PB.MAX_SPD*.65,Math.min(_PB.MAX_SPD*.65,b.vx+push));
+        b.vy=Math.max(b.vy,-2);  // 위쪽 이동 과도하게 막기
+      }
+    }
+    for(const bmp of _PB.bumpers){
+      const dx=b.x-bmp.x,dy=b.y-bmp.y,d=Math.hypot(dx,dy),md=_PB.BALL_R+bmp.r;
+      if(d<md&&d>0.001){
+        const nx=dx/d,ny=dy/d;
+        b.x+=nx*(md-d);b.y+=ny*(md-d);
+        const dot=b.vx*nx+b.vy*ny;
+        if(dot<0){
+          const kick=9+Math.random()*3;
+          b.vx=nx*kick+(Math.random()-.5)*4;
+          b.vy=Math.max(ny*kick,1);  // 범퍼 튕김 후 아래 방향 우선
+          bmp.flash=14;
+          pbSpawnSparkle(bmp.x,bmp.y,bmp.color);
+        }
+      }
+    }
+    for(const df of _PB.deflectors){
+      pbCollideSegment(b,df.ax,df.ay,df.bx,df.by,10);
+    }
+    if(b.y+_PB.BALL_R>_PB.LAND_Y&&b.vy>0)pbLandBall(b);
+  }
+  for(let i=0;i<active.length;i++){
+    for(let j=i+1;j<active.length;j++){
+      const a=active[i],b=active[j];
+      if(a.landed||b.landed)continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),md=_PB.BALL_R*2;
+      if(d<md&&d>.001){
+        const nx=dx/d,ny=dy/d,ov=(md-d)/2;
+        a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
+        const dvx=a.vx-b.vx,dvy=a.vy-b.vy,dot=dvx*nx+dvy*ny;
+        if(dot>0){a.vx-=dot*nx;a.vy-=dot*ny;b.vx+=dot*nx;b.vy+=dot*ny;}
+      }
+    }
+  }
+}
+
+function pbLandBall(b){
+  b.landed=true;b.vx=0;b.vy=0;
+  b.x=Math.max(_PB.BALL_R,Math.min(_PB.CW-_PB.BALL_R,b.x));
+  const col=_PB.balls.filter(lb=>lb.landed&&lb!==b&&Math.abs(lb.x-b.x)<_PB.BALL_R*2.5);
+  b.y=_PB.LAND_Y+_PB.BALL_R+col.length*_PB.BALL_R*2.1;
+  const rank=_PB.landed.length+1;
+  _PB.landed.push({name:b.name,color:b.color,rank});
+  pbSpawnSparkle(b.x,_PB.LAND_Y+2,b.color);
+  pbAddResult(rank,b.name,b.color);
+  const total=_PB.queue.length;
+  document.getElementById('pb-count-badge').textContent=rank+'명';
+  pbSetStatus(rank+' / '+total+'명 착지');
+  if(rank===total){
+    _PB.active=false;
+    pbStopBGM();
+    setTimeout(()=>{
+      pbSetStatus('완료! 🎉');
+      document.getElementById('order-start-btn').disabled=false;
+    },700);
+  }
+}
+
+function pbLoop(){
+  pbUpdate();
+  pbDraw();
+  if(_PB.active||_PB.balls.some(b=>!b.landed)||_PB.particles.length>0){
+    _PB.animId=requestAnimationFrame(pbLoop);
+  } else {
+    _PB.animId=null;
+  }
+}
+
+function pbDraw(){
+  const {cx,CW,CH,LAND_Y,pegs,balls,particles,gates,bumpers,deflectors,numSlots,PEG_R,BALL_R}=_PB;
+  if(!cx)return;
+  cx.clearRect(0,0,CW,CH);
+  cx.fillStyle='#050a18'; cx.fillRect(0,0,CW,CH);
+  // header
+  cx.fillStyle='rgba(0,229,255,.22)'; cx.font='bold 20px Arial';
+  cx.textAlign='center'; cx.textBaseline='top';
+  cx.fillText('PINBALL  ORDER  PICKER',CW/2,14);
+  // funnel (2x 좌표)
+  cx.save();
+  cx.strokeStyle='rgba(0,229,255,.28)'; cx.lineWidth=3; cx.setLineDash([10,10]);
+  cx.beginPath();cx.moveTo(0,0);cx.lineTo(CW/2-76,160);cx.stroke();
+  cx.beginPath();cx.moveTo(CW,0);cx.lineTo(CW/2+76,160);cx.stroke();
+  cx.setLineDash([]);
+  cx.shadowColor='#00e5ff'; cx.shadowBlur=16;
+  cx.strokeStyle='rgba(0,229,255,.7)'; cx.lineWidth=4;
+  cx.beginPath();cx.moveTo(CW/2-76,160);cx.lineTo(CW/2+76,160);cx.stroke();
+  cx.restore();
+  // fixed deflectors
+  for(const df of deflectors){
+    cx.save();
+    cx.shadowColor='#00e5ff'; cx.shadowBlur=14;
+    cx.strokeStyle='rgba(0,229,255,.75)'; cx.lineWidth=10; cx.lineCap='round';
+    cx.beginPath();cx.moveTo(df.ax,df.ay);cx.lineTo(df.bx,df.by);cx.stroke();
+    cx.restore();
+  }
+  // rotating gates
+  for(const g of gates){
+    const cos=Math.cos(g.angle),sin=Math.sin(g.angle);
+    const ax=g.cx-cos*g.len,ay=g.cy-sin*g.len;
+    const bx=g.cx+cos*g.len,by=g.cy+sin*g.len;
+    cx.save();
+    cx.shadowColor=g.color; cx.shadowBlur=g.flash>0?44:18;
+    cx.strokeStyle=g.flash>0?'#ffffff':g.color;
+    cx.lineWidth=g.thickness+4; cx.lineCap='round';
+    cx.beginPath();cx.moveTo(ax,ay);cx.lineTo(bx,by);cx.stroke();
+    cx.shadowBlur=8; cx.fillStyle=g.color;
+    cx.beginPath();cx.arc(g.cx,g.cy,10,0,Math.PI*2);cx.fill();
+    cx.restore();
+  }
+  // bumpers
+  for(const bmp of bumpers){
+    cx.save();
+    cx.shadowColor=bmp.color; cx.shadowBlur=bmp.flash>0?56:24;
+    cx.fillStyle=bmp.flash>0?'#ffffff':bmp.color;
+    cx.beginPath();cx.arc(bmp.x,bmp.y,bmp.r,0,Math.PI*2);cx.fill();
+    cx.strokeStyle=bmp.color; cx.lineWidth=4; cx.globalAlpha=0.4; cx.shadowBlur=0;
+    cx.beginPath();cx.arc(bmp.x,bmp.y,bmp.r+12,0,Math.PI*2);cx.stroke();
+    cx.restore();
+  }
+  // slot area
+  const n=numSlots||6, sw=CW/n;
+  cx.fillStyle='#030610'; cx.fillRect(0,LAND_Y,CW,CH-LAND_Y);
+  cx.save();
+  cx.shadowColor='#00e5ff'; cx.shadowBlur=10;
+  cx.strokeStyle='rgba(0,229,255,.6)'; cx.lineWidth=3;
+  cx.beginPath();cx.moveTo(0,LAND_Y);cx.lineTo(CW,LAND_Y);cx.stroke();
+  cx.restore();
+  for(let i=0;i<n;i++){
+    if(i>0){
+      cx.strokeStyle='rgba(0,229,255,.15)'; cx.lineWidth=2; cx.setLineDash([8,10]);
+      cx.beginPath();cx.moveTo(i*sw,LAND_Y+24);cx.lineTo(i*sw,CH-32);cx.stroke();
+      cx.setLineDash([]);
+    }
+    cx.fillStyle='rgba(130,200,220,.22)'; cx.font='20px Arial';
+    cx.textAlign='center'; cx.textBaseline='alphabetic';
+    cx.fillText(i+1,i*sw+sw/2,CH-14);
+  }
+  // pegs
+  for(const p of pegs){
+    cx.save();
+    cx.shadowColor='#00e5ff'; cx.shadowBlur=18;
+    cx.fillStyle='#009cbc';
+    cx.beginPath();cx.arc(p.x,p.y,PEG_R,0,Math.PI*2);cx.fill();
+    cx.restore();
+    cx.fillStyle='#aaf0ff';
+    cx.beginPath();cx.arc(p.x,p.y,PEG_R*.36,0,Math.PI*2);cx.fill();
+  }
+  // particles
+  for(const p of particles){
+    cx.save();
+    cx.globalAlpha=Math.max(0,p.life);
+    cx.shadowColor=p.color; cx.shadowBlur=12;
+    cx.fillStyle=p.color;
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fill();
+    cx.restore();
+  }
+  // balls
+  for(const b of balls){
+    cx.save();
+    cx.shadowColor=b.color; cx.shadowBlur=b.landed?10:28;
+    cx.fillStyle=b.color;
+    cx.beginPath();cx.arc(b.x,b.y,BALL_R,0,Math.PI*2);cx.fill();
+    cx.shadowBlur=0;
+    const hi=cx.createRadialGradient(b.x-BALL_R*.3,b.y-BALL_R*.3,2,b.x,b.y,BALL_R);
+    hi.addColorStop(0,'rgba(255,255,255,.4)'); hi.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=hi;
+    cx.beginPath();cx.arc(b.x,b.y,BALL_R,0,Math.PI*2);cx.fill();
+    cx.fillStyle='rgba(255,255,255,.95)';
+    cx.font='bold 16px "Noto Sans KR",Arial';
+    cx.textAlign='center'; cx.textBaseline='middle';
+    cx.fillText(b.name.length>4?b.name.slice(0,4):b.name,b.x,b.y);
+    cx.restore();
+  }
+  if(_PB.balls.length>0)pbDrawLiveRank();
+}
+
+function pbDrawLiveRank(){
+  const {cx,CW,balls}=_PB;
+  const sorted=[...balls].sort((a,b)=>{
+    if(a.landed&&!b.landed)return -1;
+    if(!a.landed&&b.landed)return 1;
+    return b.y-a.y;
+  });
+  const itemH=42,pad=16,panelW=256;
+  const panelH=pad*2+30+sorted.length*itemH;
+  const px=CW-panelW-10,py=10;
+  cx.save();
+  cx.globalAlpha=0.90;
+  cx.fillStyle='rgba(3,6,20,0.93)';
+  cx.strokeStyle='rgba(0,229,255,.4)';
+  cx.lineWidth=2;
+  cx.fillRect(px,py,panelW,panelH);
+  cx.strokeRect(px,py,panelW,panelH);
+  cx.globalAlpha=1;
+  cx.fillStyle='rgba(0,229,255,.9)';
+  cx.font='bold 20px Arial';
+  cx.textAlign='center'; cx.textBaseline='top';
+  cx.fillText('🏆 실시간 순위',px+panelW/2,py+pad-2);
+  sorted.forEach((b,i)=>{
+    const iy=py+pad+30+i*itemH;
+    const rc=i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'rgba(255,255,255,.65)';
+    cx.textAlign='left'; cx.textBaseline='middle';
+    cx.fillStyle=rc;
+    cx.font=`bold ${i<3?20:18}px Arial`;
+    cx.fillText(`${i+1}.`,px+12,iy+itemH/2);
+    cx.fillStyle=b.color;
+    cx.beginPath();cx.arc(px+50,iy+itemH/2,10,0,Math.PI*2);cx.fill();
+    cx.fillStyle=b.landed?'rgba(255,255,255,.45)':'rgba(255,255,255,.92)';
+    cx.font=`18px "Noto Sans KR",Arial`;
+    const nm=b.name.length>4?b.name.slice(0,4):b.name;
+    cx.fillText(nm,px+68,iy+itemH/2);
+    if(b.landed){
+      cx.fillStyle='#FFD700'; cx.font='bold 18px Arial';
+      cx.textAlign='right';
+      cx.fillText('★',px+panelW-8,iy+itemH/2);
+    }
+  });
+  cx.restore();
+}
+
+function pbSetStatus(msg){const el=document.getElementById('pb-status');if(el)el.textContent=msg;}
+
+function pbAddResult(rank,name,color){
+  const list=document.getElementById('pb-result-list'); if(!list)return;
+  const div=document.createElement('div'); div.className='order-result-item';
+  const rc=rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+  div.innerHTML=`<div class="order-rank ${rc}">${rank}</div><div class="order-dot" style="background:${color};box-shadow:0 0 5px ${color}88;"></div><div style="flex:1;">${escHtml(name)}</div>`;
+  list.appendChild(div);
+}
+
+function pbStart(){
+  if(!_PB._ready)pbSetupCanvas();
+  const students=[...S.students];
+  if(students.length<2){pbSetStatus('학생이 2명 이상 필요합니다');return;}
+  const n=Math.min(students.length,20);
+  if(students.length>20)toast('상위 20명으로 진행합니다','var(--gold)');
+  if(_PB.animId)cancelAnimationFrame(_PB.animId);
+  _PB.balls=[];_PB.particles=[];_PB.landed=[];
+  document.getElementById('pb-result-list').innerHTML='';
+  document.getElementById('pb-count-badge').textContent='0명';
+  document.getElementById('order-start-btn').disabled=true;
+  const shuffled=students.slice(0,n).sort(()=>Math.random()-.5);
+  const pal=[...PB_COLORS].sort(()=>Math.random()-.5);
+  _PB.queue=shuffled.map((s,i)=>({name:s.name,color:pal[i%pal.length]}));
+  _PB.numSlots=n;
+  _PB.active=true;
+  _PB.startTime=Date.now();
+  pbSetStatus('0 / '+n+'명 착지');
+  // 전원 동시 투하 (Y 스태거로 초기 충돌 분산)
+  const spread=_PB.CW*0.74;
+  const xStart=(_PB.CW-spread)/2;
+  _PB.queue.forEach((q,i)=>{
+    const frac=n>1?i/(n-1):0.5;
+    const x=xStart+frac*spread+(Math.random()-.5)*30;
+    _PB.balls.push({
+      x:Math.max(_PB.BALL_R,Math.min(_PB.CW-_PB.BALL_R,x)),
+      y:32+i*7+Math.random()*20,   // 7px 씩 스태거 → 초기 pile-up 방지
+      vx:(Math.random()-.5)*5.6,
+      vy:3+Math.random()*4,
+      name:q.name,color:q.color,landed:false,
+      _sc:0,_sy:0  // 막힘 감지용
+    });
+  });
+  pbStartBGM();
+  _PB.animId=requestAnimationFrame(pbLoop);
+}
+
+function pbReset(){
+  _PB.active=false;
+  if(_PB.animId)cancelAnimationFrame(_PB.animId);
+  _PB.animId=null;
+  _PB.balls=[];_PB.particles=[];_PB.landed=[];_PB.queue=[];
+  _PB.numSlots=Math.max(S.students.length,1);
+  document.getElementById('pb-result-list').innerHTML='';
+  document.getElementById('pb-count-badge').textContent='0명';
+  document.getElementById('order-start-btn').disabled=false;
+  pbStopBGM();
+  pbSetStatus('');
+  pbDraw();
+}
+
+function pbStartBGM(){
+  try{
+    pbStopBGM();
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    _PB.bgmCtx=ctx;
+    const master=ctx.createGain(); master.gain.value=0.22; master.connect(ctx.destination);
+    const dly=ctx.createDelay(0.5); dly.delayTime.value=0.13;
+    const dlyG=ctx.createGain(); dlyG.gain.value=0.16;
+    dly.connect(dlyG); dlyG.connect(master); dlyG.connect(dly);
+
+    const BPM=168,beat=60/BPM;
+
+    function kick(t){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.setValueAtTime(160,t);
+      o.frequency.exponentialRampToValueAtTime(30,t+0.12);
+      g.gain.setValueAtTime(1,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
+      o.connect(g);g.connect(master);o.start(t);o.stop(t+0.2);
+    }
+    function snare(t){
+      const len=Math.floor(ctx.sampleRate*.14);
+      const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/3200);
+      const s=ctx.createBufferSource(),g=ctx.createGain();
+      s.buffer=buf;g.gain.setValueAtTime(0.38,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.12);
+      s.connect(g);g.connect(master);s.start(t);
+    }
+    function hat(t,vol){
+      const len=Math.floor(ctx.sampleRate*.038);
+      const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/500);
+      const s=ctx.createBufferSource(),g=ctx.createGain();
+      const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=7500;
+      s.buffer=buf;g.gain.value=vol||0.11;
+      s.connect(f);f.connect(g);g.connect(master);s.start(t);
+    }
+    function note(t,freq,dur,type,vol){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type=type||'square';o.frequency.value=freq;
+      g.gain.setValueAtTime(vol||0.08,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      o.connect(g);g.connect(dly);g.connect(master);
+      o.start(t);o.stop(t+dur+0.05);
+    }
+    // A minor pentatonic ascending/descending
+    const mel=[440,523,659,784,880,784,659,523];
+    const bass=[110,110,130,110,98,110,130,147];
+
+    function schedBar(startT){
+      if(!_PB.bgmCtx||_PB.bgmCtx.state==='closed')return;
+      for(let i=0;i<8;i++){
+        const bt=startT+i*beat*0.5;
+        if(i===0||i===4)kick(bt);
+        if(i===2||i===6)snare(bt);
+        hat(bt,0.10);
+        if(i%2===1)hat(bt+beat*.25,0.06);
+      }
+      for(let i=0;i<8;i++){
+        note(startT+i*beat*0.5,bass[i],beat*.44,'sawtooth',0.09);
+        note(startT+i*beat*0.5,mel[i],beat*.34,'square',0.065);
+      }
+      const nxt=startT+8*beat*0.5;
+      _PB.bgmTimer=setTimeout(()=>{
+        if(_PB.bgmCtx&&_PB.bgmCtx.state!=='closed')schedBar(ctx.currentTime+0.08);
+      },Math.max(0,(nxt-ctx.currentTime-0.18)*1000));
+    }
+    schedBar(ctx.currentTime+0.05);
+  }catch(e){console.warn('BGM error:',e);}
+}
+
+function pbStopBGM(){
+  if(_PB.bgmTimer){clearTimeout(_PB.bgmTimer);_PB.bgmTimer=null;}
+  if(_PB.bgmCtx){try{_PB.bgmCtx.close();}catch(e){}_PB.bgmCtx=null;}
+}
+
+/* ─── end pinball ─── */
+
+function toggleManual(){
+  manualMode=!manualMode;
+  const btn=document.getElementById('manual-btn'), canvas=document.getElementById('capsule-canvas');
+  if(manualMode){btn.style.cssText='background:rgba(255,215,0,.12);border-color:var(--gold);color:var(--gold)';if(canvas)canvas.classList.add('manual-mode');}
+  else{btn.style.cssText='';if(canvas)canvas.classList.remove('manual-mode');}
+  updatePickHint();
+}
+
+function updatePickHint(){
+  const el=document.getElementById('pick-hint'); if(!el)return;
+  const eligible=getEligible();
+  if(!eligible.length&&S.pick.noRepeat&&S.pick.history.length){el.innerHTML='🎉 모든 학생이 뽑혔습니다! <strong>리셋</strong>하세요.';return;}
+  el.innerHTML=manualMode?'👆 캡슐을 직접 클릭하세요!':'캡슐이 섞이는 중... 자동 뽑기 버튼을 눌러 시작하세요.';
+  // 중복 방지 상태 표시
+  const statusEl=document.getElementById('no-repeat-status');
+  if(statusEl){
+    if(S.pick.noRepeat){
+      const total=S.students.filter(s=>s.isPresent).length;
+      const picked=S.pick.history.length;
+      const remaining=total-picked;
+      if(remaining>0) statusEl.innerHTML=`✅ 중복 방지 ON &nbsp;·&nbsp; 남은 학생: <strong>${remaining}명</strong>`;
+      else statusEl.innerHTML=`🎉 모두 뽑힘! 초기화하세요.`;
+    } else {
+      statusEl.innerHTML='';
+    }
+  }
+}
+
+function toggleNoRepeat(checked){
+  S.pick.noRepeat=checked; save(); initCapsules(); startPickLoop(); updatePickHint();
+}
+
+function resetPick(){
+  if(!confirm('뽑기 기록을 초기화하고 캡슐을 다시 채울까요?'))return;
+  S.pick.history=[]; S.students.forEach(s=>s.pickCount=0);
+  save(); initCapsules(); startPickLoop(); renderPickHistory(); renderStudents();
+  toast('뽑기가 초기화되었습니다!');
+}
+
+/* ════════════════════════════════════════════════════════
+   SECRET MODE (obfuscated)
+════════════════════════════════════════════════════════ */
+const _s7m={_a:false,_t:null,_o:true,_wt:null,_w:3}; // active, target, oneShot, weightTarget, weight
+let _s7taps=0,_s7timer=null;
+let _p9buf='',_p9mode='verify'; // PIN buffer, mode: verify|change
+
+function _p9stored(){return localStorage.getItem('_p9')|| '0000';}
+function _p9open(mode='verify'){
+  _auInit();_p9mode=mode;_p9buf='';
+  const sub=document.getElementById('_p9sub');
+  if(sub)sub.textContent=mode==='change'?'새 PIN 4자리 입력':'PIN 번호를 입력하세요';
+  [0,1,2,3].forEach(i=>{const d=document.getElementById('pd'+i);if(d)d.classList.remove('on');});
+  const m=document.getElementById('_p9modal');if(m)m.style.display='flex';
+}
+function _p9close(){const m=document.getElementById('_p9modal');if(m)m.style.display='none';_p9buf='';}
+function _p9key(k){
+  if(_p9buf.length>=4)return;
+  _p9buf+=k;
+  const d=document.getElementById('pd'+(_p9buf.length-1));if(d)d.classList.add('on');
+  if(_p9buf.length===4){
+    setTimeout(()=>{
+      if(_p9mode==='verify'){
+        if(_p9buf===_p9stored()){_p9close();_s7open();}
+        else{
+          [0,1,2,3].forEach(i=>{const d=document.getElementById('pd'+i);if(d){d.style.borderColor='var(--red)';setTimeout(()=>{d.style.borderColor='';d.classList.remove('on');},500);}});
+          _p9buf='';
+        }
+      } else {
+        localStorage.setItem('_p9',_p9buf);_p9close();toast('PIN 변경 완료!','var(--gold)');
+      }
+    },120);
+  }
+}
+function _p9del(){if(!_p9buf.length)return;const d=document.getElementById('pd'+(_p9buf.length-1));if(d)d.classList.remove('on');_p9buf=_p9buf.slice(0,-1);}
+
+// ── Dashboard ──
+function _s7open(){
+  _s7refreshStats();
+  const present=S.students.filter(s=>s.isPresent);
+  const sorted=present.sort((a,b)=>a.pickCount-b.pickCount);
+  const optHtml='<option value="">-- 선택 --</option>'+sorted.map(s=>`<option value="${s.id}">${escHtml(s.name)} (${s.pickCount}회)</option>`).join('');
+  const sel=document.getElementById('_s7sel');
+  if(sel){sel.innerHTML=optHtml;if(_s7m._t)sel.value=_s7m._t;}
+  const wsel=document.getElementById('_s7wsel');
+  if(wsel){wsel.innerHTML=optHtml;if(_s7m._wt)wsel.value=_s7m._wt;}
+  const wslider=document.getElementById('_s7wslider');if(wslider)wslider.value=_s7m._w;
+  const wval=document.getElementById('_s7wval');if(wval)wval.textContent=_s7m._w;
+  const wst=document.getElementById('_s7wstatus');
+  if(wst&&_s7m._wt){const n=S.students.find(s=>s.id===_s7m._wt)?.name||'?';wst.textContent=`✓ ${n}: ${_s7m._w}배 가중치 적용 중`;}
+  _s7syncStatus();
+  const d=document.getElementById('_s7dash');if(d)d.style.display='flex';
+}
+function _s7close(){const d=document.getElementById('_s7dash');if(d)d.style.display='none';}
+function _s7syncStatus(){
+  const dot=document.getElementById('_s7dot'),st=document.getElementById('_s7status');
+  if(dot)dot.className='sd-dot'+(_s7m._a?' on':' off');
+  if(st)st.textContent=_s7m._a?`활성 — ${S.students.find(s=>s.id===_s7m._t)?.name||'?'}` :'비활성';
+  const td=document.getElementById('_td');if(td)td.className=_s7m._a?'on':'';
+}
+function _s7apply(){
+  const v=parseInt(document.getElementById('_s7sel')?.value)||null;
+  const mode=document.querySelector('input[name="_s7mode"]:checked')?.value||'once';
+  _s7m._t=v;_s7m._o=(mode==='once');_s7m._a=!!v;
+  _s7syncStatus();
+  if(v){const n=S.students.find(s=>s.id===v)?.name||'?';toast(`다음 뽑기: ${n}`,'var(--gold)');}
+}
+function _s7clear(){_s7m._a=false;_s7m._t=null;_s7syncStatus();toast('조작 해제됨.');}
+function _s7recommend(){
+  const present=S.students.filter(s=>s.isPresent);if(!present.length)return;
+  const min=Math.min(...present.map(s=>s.pickCount));
+  const cands=present.filter(s=>s.pickCount===min);
+  const pick=cands[Math.floor(Math.random()*cands.length)];
+  document.getElementById('_s7sel').value=pick.id;
+  toast(`추천: ${pick.name} (${pick.pickCount}회)`, 'var(--cyan)');
+}
+function _s7refreshStats(){
+  const el=document.getElementById('_s7stats');if(!el)return;
+  const present=S.students.filter(s=>s.isPresent);
+  if(!present.length){el.innerHTML='<span>학생 없음</span>';return;}
+  const sorted=[...present].sort((a,b)=>a.pickCount-b.pickCount);
+  const top=sorted.slice(-2).reverse(),bot=sorted.slice(0,2);
+  el.innerHTML=
+    `<div class="sd-stat-row"><span>가장 적게 뽑힌</span><strong style="color:var(--green)">${bot.map(s=>`${escHtml(s.name)}(${s.pickCount})`).join(', ')}</strong></div>`+
+    `<div class="sd-stat-row"><span>가장 많이 뽑힌</span><strong style="color:var(--red)">${top.map(s=>`${escHtml(s.name)}(${s.pickCount})`).join(', ')}</strong></div>`+
+    `<div class="sd-stat-row"><span>전체 평균</span><strong>${(present.reduce((s,x)=>s+x.pickCount,0)/present.length).toFixed(1)}회</strong></div>`;
+}
+function _s7changePin(){const np=document.getElementById('_s7newpin');if(!np?.value)return;if(!/^\d{4}$/.test(np.value)){toast('4자리 숫자로 입력하세요!','var(--red)');return;}localStorage.setItem('_p9',np.value);np.value='';toast('PIN 변경 완료!','var(--gold)');}
+
+// ── Legacy quick-pick panel ──
+function handleSecTap(){
+  _s7taps++;
+  if(_s7timer)clearTimeout(_s7timer);
+  _s7timer=setTimeout(()=>{_s7taps=0;},2800);
+  if(_s7taps>=5){_s7taps=0;_p9open();}
+}
+function openSecret(){_p9open();}
+function closeSecret(){document.getElementById('secret-panel').style.display='none';}
+function applySecret(){
+  const v=parseInt(document.getElementById('sec-sel')?.value)||null;
+  _s7m._t=v;_s7m._o=document.getElementById('sec-oneshot')?.checked??true;_s7m._a=!!v;
+  _s7syncStatus();closeSecret();
+}
+
+function pickWinner(eligible){
+  // Forced pick (secret mode)
+  if(_s7m._a&&_s7m._t){
+    const forced=eligible.find(s=>s.id===_s7m._t)||eligible[Math.floor(Math.random()*eligible.length)];
+    if(_s7m._o){_s7m._a=false;_s7m._t=null;_s7syncStatus();}
+    _manualPickId=null;
+    return forced;
+  }
+  // Manual click: use the specific clicked capsule's student
+  if(_manualPickId!==null){
+    const picked=eligible.find(s=>s.id===_manualPickId)||eligible[Math.floor(Math.random()*eligible.length)];
+    _manualPickId=null;
+    return picked;
+  }
+  // Weighted random pick
+  if(_s7m._wt&&_s7m._w>1&&eligible.some(s=>s.id===_s7m._wt)){
+    const pool=[];
+    eligible.forEach(s=>{
+      const w=s.id===_s7m._wt?_s7m._w:1;
+      for(let i=0;i<w;i++)pool.push(s);
+    });
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  return eligible[Math.floor(Math.random()*eligible.length)];
+}
+
+/* ════════════════════════════════════════════════════════
+   STUDENT TABLE
+════════════════════════════════════════════════════════ */
+function renderStudents(){
+  const wrap=document.getElementById('student-list'); if(!wrap)return;
+  const badge=document.getElementById('cnt-badge'); if(badge)badge.textContent=`${S.students.length}명`;
+  if(!S.students.length){wrap.innerHTML=`<div class="empty"><div class="em">🎒</div>등록된 학생이 없습니다.<br><span style="font-size:12px;margin-top:6px;display:block">오른쪽에서 추가해 주세요.</span></div>`;return;}
+  const rows=S.students.map(s=>{
+    const ed=S.editId===s.id;
+    return`<tr><td style="color:var(--txt2);font-size:11px;width:32px">${s.id}</td>
+    <td>${ed?`<input type="text" class="inline-input" id="en-${s.id}" value="${escHtml(s.name)}" maxlength="10">`:`<strong>${escHtml(s.name)}</strong>`}</td>
+    <td>${ed?`<select id="eg-${s.id}" style="width:72px;padding:4px 6px;font-size:12px;"><option value="M" ${s.gender==='M'?'selected':''}>남 ♂</option><option value="F" ${s.gender==='F'?'selected':''}>여 ♀</option></select>`:`<span class="badge badge-${s.gender.toLowerCase()}">${s.gender==='M'?'남 ♂':'여 ♀'}</span>`}</td>
+    <td><button class="att-btn ${s.isPresent?'on':'off'}" onclick="toggleAtt(${s.id})">${s.isPresent?'✅ 출석':'❌ 결석'}</button></td>
+    <td style="color:var(--txt2);font-size:12px;text-align:right;padding-right:6px">${s.pickCount}회</td>
+    <td><div style="display:flex;gap:4px;">${ed?`<button class="ico-btn" onclick="saveEdit(${s.id})">💾</button><button class="ico-btn" onclick="cancelEdit()">✕</button>`:`<button class="ico-btn" onclick="startEdit(${s.id})">✏️</button><button class="ico-btn del" onclick="removeStudent(${s.id})">🗑️</button>`}</div></td></tr>`;
+  }).join('');
+  wrap.innerHTML=`<table><thead><tr><th>No.</th><th>이름</th><th>성별</th><th>출석</th><th style="text-align:right">발표</th><th>관리</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   STUDENT CRUD
+════════════════════════════════════════════════════════ */
+function nextId(){return S.students.length===0?1:Math.max(...S.students.map(s=>s.id))+1;}
+function mkStudent(name,gender){return{id:nextId(),name,gender,fixedSeat:null,isPresent:true,pickCount:0};}
+function addStudent(){
+  const nameEl=document.getElementById('add-name'), name=nameEl.value.trim();
+  if(!name){toast('이름을 입력해 주세요!','var(--red)');nameEl.focus();return;}
+  if(S.students.some(s=>s.name===name)){toast(`'${name}' 이름이 이미 있습니다!`,'var(--red)');return;}
+  S.students.push(mkStudent(name,document.getElementById('add-gender').value));
+  nameEl.value='';nameEl.focus();save();renderAll();toast(`${name} 추가 완료!`);
+}
+function removeStudent(id){
+  const s=S.students.find(x=>x.id===id);if(!s||!confirm(`'${s.name}' 삭제?`))return;
+  S.students=S.students.filter(x=>x.id!==id);
+  Object.keys(S.assignment).forEach(k=>{if(S.assignment[k]===id)delete S.assignment[k];});
+  save();renderAll();toast(`${s.name} 삭제됨.`);
+}
+function toggleAtt(id){const s=S.students.find(x=>x.id===id);if(!s)return;s.isPresent=!s.isPresent;save();renderStudents();renderStats();}
+function startEdit(id){S.editId=id;renderStudents();const el=document.getElementById(`en-${id}`);if(el){el.focus();el.select();}}
+function cancelEdit(){S.editId=null;renderStudents();}
+function saveEdit(id){
+  const s=S.students.find(x=>x.id===id);if(!s)return;
+  const nameEl=document.getElementById(`en-${id}`),gEl=document.getElementById(`eg-${id}`);
+  const name=nameEl?nameEl.value.trim():s.name;
+  if(!name){toast('이름을 입력해 주세요!','var(--red)');return;}
+  if(S.students.some(x=>x.name===name&&x.id!==id)){toast(`'${name}' 이름이 이미 있습니다!`,'var(--red)');return;}
+  s.name=name;s.gender=gEl?gEl.value:s.gender;S.editId=null;save();renderAll();toast('수정됨!');
+}
+function bulkAdd(replace){
+  const raw=document.getElementById('bulk-txt').value.trim();
+  if(!raw){toast('입력 내용이 없습니다!','var(--red)');return;}
+  if(replace&&!confirm('기존 목록을 지우고 교체?'))return;
+  if(replace)S.students=[];
+  let added=0,skipped=0;
+  for(const line of raw.split('\n')){
+    const parts=line.trim().split(',');if(parts.length<2){skipped++;continue;}
+    const name=parts[0].trim();if(!name){skipped++;continue;}
+    const gr=parts[1].trim(),g=(gr==='남'||gr==='M'||gr==='m')?'M':(gr==='여'||gr==='F'||gr==='f')?'F':null;
+    if(!g){skipped++;continue;}
+    if(!replace&&S.students.some(s=>s.name===name)){skipped++;continue;}
+    S.students.push(mkStudent(name,g));added++;
+  }
+  document.getElementById('bulk-txt').value='';save();renderAll();
+  toast(`${added}명 추가${skipped>0?`, ${skipped}명 건너뜀`:''}!`);
+}
+
+/* ════════════════════════════════════════════════════════
+   EXCEL UPLOAD (Stage 3 Extension)
+════════════════════════════════════════════════════════ */
+let xlItems = []; // { uid, name, gender, status, error }
+let xlUidSeq = 0;
+
+/* ─── Drag-and-drop zone ── */
+function dzOver(e){ e.preventDefault(); document.getElementById('drag-zone').classList.add('drag-over'); }
+function dzLeave(e){ document.getElementById('drag-zone').classList.remove('drag-over'); }
+function dzDrop(e){
+  e.preventDefault(); dzLeave(e);
+  const file = e.dataTransfer.files[0];
+  if(file) xlProcess(file);
+}
+function xlHandleFile(e){ const file = e.target.files[0]; if(file) xlProcess(file); e.target.value=''; }
+
+/* ─── Main parse entry ── */
+function xlProcess(file){
+  const name = file.name.toLowerCase();
+  const ok = name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.csv');
+  if(!ok){ toast('지원 형식: .xlsx / .xls / .csv', 'var(--red)'); return; }
+  if(typeof XLSX === 'undefined'){ toast('라이브러리 로딩 중입니다. 잠시 후 다시 시도해 주세요.', 'var(--red)'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const wb = XLSX.read(ev.target.result, { type:'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      xlParseAndShow(raw, file.name);
+    } catch(err) {
+      toast('파일을 읽을 수 없습니다.', 'var(--red)');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ─── Parse raw rows ── */
+function xlParseAndShow(raw, filename){
+  if(!raw.length){ toast('빈 파일입니다.', 'var(--red)'); return; }
+
+  // Header detection (first row)
+  const header = raw[0].map(h => String(h).trim().toLowerCase());
+  const nameAliases   = ['이름','성명','name','학생이름','학생명'];
+  const genderAliases = ['성별','gender','sex'];
+  let nameIdx = -1, genderIdx = -1;
+  for(const a of nameAliases)   { const i=header.findIndex(h=>h===a||h.includes(a)); if(i!==-1){nameIdx=i;break;} }
+  for(const a of genderAliases) { const i=header.findIndex(h=>h===a||h.includes(a)); if(i!==-1){genderIdx=i;break;} }
+
+  const hasHeader = nameIdx !== -1 || genderIdx !== -1;
+  if(!hasHeader){ nameIdx=0; genderIdx=1; } // fallback: col0=name, col1=gender
+  const dataRows = hasHeader ? raw.slice(1) : raw;
+
+  xlItems = [];
+  xlUidSeq = 0;
+  dataRows.forEach(row => {
+    if(!row.some(c => String(c).trim())) return; // skip blank rows
+    const rawName   = String(row[nameIdx]   ?? '').trim();
+    const rawGender = String(row[genderIdx] ?? '').trim();
+    const g = rawGender.toLowerCase();
+    const gender = (g==='남'||g==='남자'||g==='m') ? 'M' : (g==='여'||g==='여자'||g==='f') ? 'F' : null;
+    let status='ok', error='';
+    if(!rawName)          { status='error'; error='이름 누락'; }
+    else if(!gender)      { status='error'; error=rawGender?`성별 인식 불가 "${rawGender}"`:'성별 누락'; }
+    xlItems.push({ uid: ++xlUidSeq, name: rawName, gender, status, error });
+  });
+
+  if(!xlItems.length){ toast('인식된 학생이 없습니다.', 'var(--red)'); return; }
+
+  document.getElementById('ep-filename').textContent = `📄 ${filename}${hasHeader ? '' : '  (헤더 미감지 → 1열=이름, 2열=성별 적용)'}`;
+  xlRenderPreview();
+  document.getElementById('excel-preview-modal').style.display='flex';
+}
+
+/* ─── Render preview table ── */
+function xlRenderPreview(){
+  const tbody = document.getElementById('ep-tbody');
+  const active = xlItems.filter(x=>!x.deleted);
+  const dups   = new Set(active.filter(x=>x.status==='ok'&&S.students.some(s=>s.name===x.name)).map(x=>x.uid));
+
+  tbody.innerHTML = active.map((item, i) => {
+    const isDup = dups.has(item.uid);
+    let statusHtml;
+    if(item.status==='error') statusHtml = `<span style="color:var(--red);font-size:12px;">⚠️ ${escHtml(item.error)}</span>`;
+    else if(isDup)             statusHtml = `<span style="color:var(--gold);font-size:12px;">⚠️ 중복</span>`;
+    else                       statusHtml = `<span style="color:var(--green)">✅</span>`;
+    const rowCls = item.status==='error' ? 'ep-error' : isDup ? 'ep-dup' : '';
+    return `<tr class="${rowCls}">
+      <td style="color:var(--txt2);font-size:11px">${i+1}</td>
+      <td><input class="ep-name-in" value="${escHtml(item.name)}" oninput="xlUpdateItem(${item.uid},'name',this.value)"></td>
+      <td><select class="ep-gender-sel" onchange="xlUpdateItem(${item.uid},'gender',this.value)">
+        <option value=""${!item.gender?' selected':''}>--</option>
+        <option value="M"${item.gender==='M'?' selected':''}>남 ♂</option>
+        <option value="F"${item.gender==='F'?' selected':''}>여 ♀</option>
+      </select></td>
+      <td>${statusHtml}</td>
+      <td><button class="ico-btn del" onclick="xlDeleteItem(${item.uid})">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  // Stats
+  const total  = active.length;
+  const valid  = active.filter(x=>x.status==='ok').length;
+  const errors = active.filter(x=>x.status==='error').length;
+  const dupCnt = dups.size;
+  document.getElementById('ep-stats').innerHTML =
+    `<div>전체: <strong style="color:var(--txt)">${total}명</strong></div>` +
+    `<div>유효: <strong style="color:var(--green)">${valid}명</strong></div>` +
+    (errors ? `<div>오류: <strong style="color:var(--red)">${errors}명</strong></div>` : '') +
+    (dupCnt  ? `<div>중복: <strong style="color:var(--gold)">${dupCnt}명</strong></div>` : '');
+
+  // Dup warning
+  const warn = document.getElementById('ep-dup-warn');
+  if(dupCnt){
+    warn.style.display='block';
+    warn.innerHTML=`⚠️ <strong>${dupCnt}명</strong>의 이름이 이미 존재합니다.
+      등록 시: <label style="margin:0 8px;cursor:pointer"><input type="radio" name="dup-policy" value="skip" checked> 건너뛰기</label>
+              <label style="cursor:pointer"><input type="radio" name="dup-policy" value="overwrite"> 덮어쓰기</label>`;
+  } else { warn.style.display='none'; }
+
+  const importBtn = document.getElementById('ep-import-btn');
+  const note      = document.getElementById('ep-footer-note');
+  if(importBtn) importBtn.disabled = valid===0;
+  if(note) note.textContent = valid>0 ? `유효한 ${valid}명을 등록합니다.` : '등록할 수 있는 행이 없습니다.';
+}
+
+/* ─── Update / delete preview items ── */
+function xlUpdateItem(uid, field, value){
+  const item = xlItems.find(x=>x.uid===uid); if(!item)return;
+  item[field] = value;
+  // Recompute status
+  const g = (item.gender||'').toLowerCase();
+  const gOk = g==='m'||g==='f';
+  if(!item.name)        { item.status='error'; item.error='이름 누락'; }
+  else if(!gOk)         { item.status='error'; item.error=item.gender?`성별 인식 불가 "${item.gender}"`:'성별 누락'; }
+  else                  { item.status='ok';    item.error=''; }
+  xlRenderPreview();
+}
+function xlDeleteItem(uid){ const x=xlItems.find(i=>i.uid===uid); if(x)x.deleted=true; xlRenderPreview(); }
+
+/* ─── Import ── */
+function xlImport(){
+  const active  = xlItems.filter(x=>!x.deleted && x.status==='ok');
+  if(!active.length){ toast('등록할 유효한 학생이 없습니다.', 'var(--red)'); return; }
+  const policy  = (document.querySelector('input[name="dup-policy"]:checked')||{}).value || 'skip';
+  let added=0, skipped=0, overwritten=0;
+  for(const item of active){
+    const existing = S.students.find(s=>s.name===item.name);
+    if(existing){
+      if(policy==='overwrite'){ existing.gender=item.gender; overwritten++; }
+      else skipped++;
+    } else {
+      S.students.push(mkStudent(item.name, item.gender)); added++;
+    }
+  }
+  closeXlPreview();
+  save(); renderAll();
+  let msg = `${added}명 추가`;
+  if(overwritten) msg += `, ${overwritten}명 덮어쓰기`;
+  if(skipped)     msg += `, ${skipped}명 건너뜀`;
+  toast(msg + ' 완료!');
+}
+
+function closeXlPreview(){
+  document.getElementById('excel-preview-modal').style.display='none';
+  xlItems=[];
+}
+
+/* ─── Sample download ── */
+function xlDownloadSample(){
+  if(typeof XLSX==='undefined'){ toast('라이브러리 로딩 중입니다.', 'var(--red)'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['이름', '성별'],
+    ['홍길동', '남'],
+    ['김영희', '여'],
+    ['이민수', '남'],
+  ]);
+  // Column widths
+  ws['!cols'] = [{ wch:12 }, { wch:8 }];
+  XLSX.utils.book_append_sheet(wb, ws, '학생목록');
+  XLSX.writeFile(wb, '학생목록_샘플.xlsx');
+}
+
+/* ════════════════════════════════════════════════════════
+   WEB AUDIO ENGINE
+════════════════════════════════════════════════════════ */
+let _AC=null, _MG=null; // AudioContext, MasterGain
+function _auInit(){
+  if(_AC)return;
+  try{_AC=new(window.AudioContext||window.webkitAudioContext)();_MG=_AC.createGain();_MG.gain.value=S.pkCfg.volume/100;_MG.connect(_AC.destination);}catch(e){}
+}
+function _auVol(v){if(_MG)_MG.gain.value=clamp(v,0,1);}
+function _auOsc(freq,type,start,dur,vol=0.18,ramp=true){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const o=_AC.createOscillator(),g=_AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,start);
+  g.gain.setValueAtTime(ramp?0:vol,start);
+  if(ramp)g.gain.linearRampToValueAtTime(vol,start+0.02);
+  g.gain.setValueAtTime(vol,start+dur-0.03);
+  g.gain.linearRampToValueAtTime(0,start+dur);
+  o.connect(g);g.connect(_MG);o.start(start);o.stop(start+dur);
+}
+function _auNoise(start,dur,vol=0.07){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const buf=_AC.createBuffer(1,_AC.sampleRate*dur,_AC.sampleRate);
+  const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1);
+  const src=_AC.createBufferSource(),g=_AC.createGain(),f=_AC.createBiquadFilter();
+  f.type='bandpass';f.frequency.value=1200;f.Q.value=0.8;
+  src.buffer=buf;g.gain.setValueAtTime(vol,start);g.gain.linearRampToValueAtTime(0,start+dur);
+  src.connect(f);f.connect(g);g.connect(_MG);src.start(start);src.stop(start+dur);
+}
+function sndClick(){if(!_AC||!S.pkCfg.soundOn)return;_auOsc(820,'sine',_AC.currentTime,.03,0.14,false);}
+function sndCountdown(step){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const t=_AC.currentTime;
+  const freq=step===0?880:440;
+  _auOsc(freq,'square',t,step===0?.28:.1,0.26);
+}
+function sndShuffleSweep(){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const t=_AC.currentTime,o=_AC.createOscillator(),g=_AC.createGain();
+  o.type='sawtooth';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(820,t+.05);
+  g.gain.setValueAtTime(0.18,t);g.gain.linearRampToValueAtTime(0,t+.06);
+  o.connect(g);g.connect(_MG);o.start(t);o.stop(t+.06);
+}
+let _drTimer=null;
+function sndDrumroll(dur){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  let elapsed=0,interval=180;
+  function burst(){
+    if(elapsed>=dur){return;}
+    _auNoise(_AC.currentTime,.055,.22);
+    elapsed+=interval;interval=Math.max(55,interval*0.91);
+    _drTimer=setTimeout(burst,interval);
+  }
+  burst();
+}
+function sndDrumrollStop(){if(_drTimer){clearTimeout(_drTimer);_drTimer=null;}}
+function sndHeartbeat(dur){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  let t=_AC.currentTime,interval=0.55,elapsed=0;
+  function beat(){
+    if(elapsed>=dur)return;
+    _auOsc(62,'sine',t,.04,.40);_auOsc(58,'sine',t+.08,.04,.28);
+    elapsed+=interval;interval=Math.max(0.13,interval*.88);t+=interval;
+    setTimeout(beat,interval*1000);
+  }
+  beat();
+}
+let _fanTimer=null;
+function sndFanfare(){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const t=_AC.currentTime;
+  const notes=[523,659,784,1047]; // C5 E5 G5 C6
+  notes.forEach((f,i)=>{
+    const st=t+i*.14;
+    _auOsc(f,'square',st,.22,0.24);
+    if(i===notes.length-1){_auOsc(f,'square',st+.06,.45,0.16);}
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   SHUFFLE BGM  (Am 단조 · BPM 150 · 긴장감)
+════════════════════════════════════════════════════════ */
+let _sBgmNodes=[], _sBgmTicker=null;
+function _auHihat(start,dur,vol){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  const len=Math.max(1,Math.round(_AC.sampleRate*dur));
+  const buf=_AC.createBuffer(1,len,_AC.sampleRate);
+  const d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1);
+  const src=_AC.createBufferSource(),g=_AC.createGain(),f=_AC.createBiquadFilter();
+  f.type='highpass';f.frequency.value=7000;
+  g.gain.setValueAtTime(vol,start);g.gain.linearRampToValueAtTime(0,start+dur);
+  src.buffer=buf;src.connect(f);f.connect(g);g.connect(_MG);src.start(start);src.stop(start+dur+0.01);
+}
+function sndShuffleBgm(){
+  if(!_AC||!S.shuffleCfg.bgmOn)return;
+  sndShuffleBgmStop();
+  const t=_AC.currentTime;
+  // ── 딥 베이스 드론 (Am 루트: A1+A2) ──
+  [[55,'sine',0.72],[110,'sine',0.46]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.5);
+    o.connect(g);g.connect(_MG);o.start();
+    _sBgmNodes.push({osc:o,gain:g});
+  });
+  // ── 긴장 패드 (Am: A3+C4+E4 sawtooth, 로우패스 스윕으로 점점 거칠어짐) ──
+  [[220,'sawtooth',0.18],[261.6,'sawtooth',0.14],[330,'sawtooth',0.10]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain(),f=_AC.createBiquadFilter();
+    o.type=type;o.frequency.value=freq;
+    f.type='lowpass';f.Q.value=5;
+    f.frequency.setValueAtTime(250,t);f.frequency.linearRampToValueAtTime(2200,t+7);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+0.8);
+    o.connect(f);f.connect(g);g.connect(_MG);o.start();
+    _sBgmNodes.push({osc:o,gain:g});
+  });
+  // ── BPM 150, 16분음표(100ms) 비트 루프 ──
+  let beat=0;
+  _sBgmTicker=setInterval(()=>{
+    if(!_AC||!S.pkCfg.soundOn)return;
+    const now=_AC.currentTime;
+    const b=beat%16;
+    // 킥드럼: 1·3박 (b=0,8) — 피치 드롭 사인파
+    if(b===0||b===8){
+      const ko=_AC.createOscillator(),kg=_AC.createGain();
+      ko.type='sine';
+      ko.frequency.setValueAtTime(210,now);ko.frequency.exponentialRampToValueAtTime(44,now+0.16);
+      kg.gain.setValueAtTime(0.90,now);kg.gain.exponentialRampToValueAtTime(0.001,now+0.26);
+      ko.connect(kg);kg.connect(_MG);ko.start(now);ko.stop(now+0.28);
+    }
+    // 스네어: 2·4박 (b=4,12) — 노이즈 + 톤
+    if(b===4||b===12){
+      _auNoise(now,0.09,0.65);
+      const sn=_AC.createOscillator(),sg=_AC.createGain();
+      sn.type='triangle';sn.frequency.value=210;
+      sg.gain.setValueAtTime(0.30,now);sg.gain.exponentialRampToValueAtTime(0.001,now+0.10);
+      sn.connect(sg);sg.connect(_MG);sn.start(now);sn.stop(now+0.12);
+    }
+    // 오픈 하이햇: 8분음표 오프비트
+    if(b===2||b===6||b===10||b===14){_auHihat(now,0.045,0.24);}
+    // 클로즈 하이햇: 16분음표 홀수
+    if(b%2===1){_auHihat(now,0.018,0.13);}
+    beat++;
+  },100);
+}
+function sndShuffleBgmStop(){
+  if(_sBgmTicker){clearInterval(_sBgmTicker);_sBgmTicker=null;}
+  if(!_AC)return;
+  _sBgmNodes.forEach(n=>{
+    try{n.gain.gain.linearRampToValueAtTime(0,_AC.currentTime+0.35);n.osc.stop(_AC.currentTime+0.4);}catch(e){}
+  });
+  _sBgmNodes=[];
+}
+function setShuffleBgm(v){S.shuffleCfg.bgmOn=v;save();}
+
+/* ════════════════════════════════════════════════════════
+   REVEAL BGM  (짜잔! 트라이엄프 · C장조)
+════════════════════════════════════════════════════════ */
+let _rBgmNodes=[], _rBgmTicker=null;
+function sndRevealBgm(){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  sndRevealBgmStop();
+  const t=_AC.currentTime;
+  // ── 빠른 상승 아르페지오 (C5→E5→G5→C6→E6) ──
+  [[523,0],[659,0.09],[784,0.17],[1047,0.25],[1319,0.32]].forEach(([freq,delay])=>{
+    const st=t+delay;
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type='square';o.frequency.value=freq;
+    g.gain.setValueAtTime(0.001,st);g.gain.linearRampToValueAtTime(0.36,st+0.012);
+    g.gain.setValueAtTime(0.20,st+0.065);g.gain.linearRampToValueAtTime(0,st+0.19);
+    o.connect(g);g.connect(_MG);o.start(st);o.stop(st+0.21);
+  });
+  // ── 짜잔 승리 스네어 롤 (아르페지오 직후) ──
+  let rb=0;
+  _rBgmTicker=setInterval(()=>{
+    if(!_AC||!S.pkCfg.soundOn)return;
+    _auNoise(_AC.currentTime,0.025,0.32);
+    rb++;if(rb>=7){clearInterval(_rBgmTicker);_rBgmTicker=null;}
+  },68);
+  // ── 화음 패드 (C major: C4+E4+G4+C5+G5) ──
+  const cs=t+0.44;
+  [[261.6,'sine',0.40],[329.6,'sine',0.34],[392,'sine',0.28],[523,'triangle',0.22],[784,'triangle',0.16]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,cs);g.gain.linearRampToValueAtTime(vol,cs+0.12);
+    g.gain.setValueAtTime(vol,cs+1.6);g.gain.linearRampToValueAtTime(0,cs+3.2);
+    o.connect(g);g.connect(_MG);o.start(cs);o.stop(cs+3.4);
+    _rBgmNodes.push({osc:o,gain:g});
+  });
+  // ── 베이스 라인 (C2→G2→C2) ──
+  [[65.4,cs,0.62],[98,cs+0.55,0.50],[65.4,cs+1.1,0.56]].forEach(([freq,st,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type='sine';o.frequency.value=freq;
+    g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(vol,st+0.04);
+    g.gain.setValueAtTime(vol,st+0.30);g.gain.linearRampToValueAtTime(0,st+0.50);
+    o.connect(g);g.connect(_MG);o.start(st);o.stop(st+0.55);
+    _rBgmNodes.push({osc:o,gain:g});
+  });
+  // ── 하이햇 연타 (승리 비트, 짧게 6번) ──
+  for(let i=0;i<6;i++){
+    const ht=cs+i*0.14;
+    setTimeout(()=>{if(_AC&&S.pkCfg.soundOn)_auHihat(_AC.currentTime,0.03,0.22);},Math.round((ht-t)*1000));
+  }
+}
+function sndRevealBgmStop(){
+  if(_rBgmTicker){clearInterval(_rBgmTicker);_rBgmTicker=null;}
+  if(!_AC)return;
+  _rBgmNodes.forEach(n=>{
+    try{n.gain.gain.linearRampToValueAtTime(0,_AC.currentTime+0.4);n.osc.stop(_AC.currentTime+0.45);}catch(e){}
+  });
+  _rBgmNodes=[];
+}
+
+/* ════════════════════════════════════════════════════════
+   PICK BGM
+════════════════════════════════════════════════════════ */
+let _pBgmNodes=[];
+function sndPickBgm(){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  sndPickBgmStop();
+  // Tension drone: D2+A2 fifth, low rumble
+  [[73.4,'sine',0.20],[110,'sine',0.13],[146.8,'triangle',0.08]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,_AC.currentTime);
+    g.gain.linearRampToValueAtTime(vol,_AC.currentTime+0.6);
+    o.connect(g);g.connect(_MG);o.start();
+    _pBgmNodes.push({osc:o,gain:g});
+  });
+  // Rising frequency ramp for tension
+  _pBgmNodes[2]?.osc.frequency.exponentialRampToValueAtTime(220,_AC.currentTime+4);
+}
+function sndPickBgmStop(){
+  if(!_AC)return;
+  _pBgmNodes.forEach(n=>{
+    try{n.gain.gain.linearRampToValueAtTime(0,_AC.currentTime+0.2);n.osc.stop(_AC.currentTime+0.25);}catch(e){}
+  });
+  _pBgmNodes=[];
+}
+
+/* ════════════════════════════════════════════════════════
+   SEAT COMPLETE "짜잔" OVERLAY
+════════════════════════════════════════════════════════ */
+async function showSeatTada(){
+  _auInit();
+  doConfetti();
+  sndSeatCompleteBgm();
+  const overlay=document.getElementById('seat-tada-overlay');
+  const banner=document.getElementById('st-banner');
+  const title=document.getElementById('st-title');
+  const hint=document.getElementById('st-hint');
+  const closeBtn=document.getElementById('st-close');
+  // Reset
+  banner.className=''; banner.style.opacity='0'; banner.style.transform='scale(0.3)';
+  title.className=''; hint.className=''; closeBtn.className='';
+  overlay.style.opacity='0'; overlay.style.display='flex'; overlay.style.transition='opacity .35s';
+  await sleep(20); overlay.style.opacity='1';
+  await sleep(200);
+  // 배너 팡 등장
+  banner.classList.add('pop');
+  await sleep(720);
+  banner.classList.remove('pop'); banner.classList.add('pop-done');
+  title.classList.add('show');
+  await sleep(380);
+  hint.classList.add('show'); closeBtn.classList.add('show');
+  overlay.onclick=(e)=>{if(e.target!==closeBtn)closeSeatTada();};
+}
+function closeSeatTada(){
+  const overlay=document.getElementById('seat-tada-overlay');
+  overlay.onclick=null;
+  overlay.style.transition='opacity .22s'; overlay.style.opacity='0';
+  setTimeout(()=>{overlay.style.display='none';},240);
+  sndSeatCompleteBgmStop();
+}
+
+/* ════════════════════════════════════════════════════════
+   SEAT COMPLETE BGM  (신나는 C장조 · 팡파르 + 비트)
+════════════════════════════════════════════════════════ */
+let _scBgmNodes=[], _scBgmTicker=null;
+function sndSeatCompleteBgm(){
+  if(!_AC||!S.pkCfg.soundOn)return;
+  sndSeatCompleteBgmStop();
+  const t=_AC.currentTime;
+
+  // ── 빠른 상승 팡파르 아르페지오 (C4→C6) ──
+  [[261.6,0,.22],[329.6,.07,.24],[392,.13,.26],[523,.19,.30],[659,.25,.32],[784,.31,.35],[1047,.36,.40]].forEach(([freq,delay,vol])=>{
+    const st=t+delay;
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type='square';o.frequency.value=freq;
+    g.gain.setValueAtTime(0.001,st);g.gain.linearRampToValueAtTime(vol,st+0.018);
+    g.gain.setValueAtTime(vol,st+0.08);g.gain.linearRampToValueAtTime(0,st+0.20);
+    o.connect(g);g.connect(_MG);o.start(st);o.stop(st+0.22);
+  });
+
+  // ── 크래쉬 심벌즈 ──
+  _auNoise(t+0.40,0.14,0.55);
+  _auNoise(t+0.42,0.10,0.42);
+
+  // ── 베이스 붐 ──
+  const cs=t+0.45;
+  [[65.4,'sine',0.72],[130.8,'sine',0.48]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,cs);g.gain.linearRampToValueAtTime(vol,cs+0.04);
+    g.gain.setValueAtTime(vol,cs+0.28);g.gain.linearRampToValueAtTime(0,cs+0.58);
+    o.connect(g);g.connect(_MG);o.start(cs);o.stop(cs+0.62);
+  });
+
+  // ── C장조 화음 패드 (지속) ──
+  [[261.6,'sine',0.40],[329.6,'sine',0.34],[392,'sine',0.30],[523,'triangle',0.24],[784,'sine',0.18]].forEach(([freq,type,vol])=>{
+    const o=_AC.createOscillator(),g=_AC.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,cs);g.gain.linearRampToValueAtTime(vol,cs+0.12);
+    g.gain.setValueAtTime(vol,cs+2.0);g.gain.linearRampToValueAtTime(0,cs+4.0);
+    o.connect(g);g.connect(_MG);o.start(cs);o.stop(cs+4.2);
+    _scBgmNodes.push({osc:o,gain:g});
+  });
+
+  // ── 승리 드럼 비트 (BPM 126 · 2마디) ──
+  let beat=0;
+  _scBgmTicker=setInterval(()=>{
+    if(!_AC||!S.pkCfg.soundOn||beat>=16){clearInterval(_scBgmTicker);_scBgmTicker=null;return;}
+    const now=_AC.currentTime;
+    const b=beat%8;
+    // 킥: 1·3박
+    if(b===0||b===4){
+      const ko=_AC.createOscillator(),kg=_AC.createGain();
+      ko.type='sine';ko.frequency.setValueAtTime(170,now);ko.frequency.exponentialRampToValueAtTime(44,now+0.14);
+      kg.gain.setValueAtTime(0.85,now);kg.gain.exponentialRampToValueAtTime(0.001,now+0.20);
+      ko.connect(kg);kg.connect(_MG);ko.start(now);ko.stop(now+0.22);
+    }
+    // 스네어: 2·4박
+    if(b===2||b===6){
+      _auNoise(now,0.07,0.58);
+      const sn=_AC.createOscillator(),sg=_AC.createGain();
+      sn.type='triangle';sn.frequency.value=210;
+      sg.gain.setValueAtTime(0.28,now);sg.gain.exponentialRampToValueAtTime(0.001,now+0.09);
+      sn.connect(sg);sg.connect(_MG);sn.start(now);sn.stop(now+0.11);
+    }
+    // 하이햇
+    _auHihat(now,0.025,0.20);
+    if(b%2===1)_auHihat(now,0.015,0.10);
+    beat++;
+  },119); // ~BPM 126 8분음표
+}
+function sndSeatCompleteBgmStop(){
+  if(_scBgmTicker){clearInterval(_scBgmTicker);_scBgmTicker=null;}
+  if(!_AC)return;
+  _scBgmNodes.forEach(n=>{
+    try{n.gain.gain.linearRampToValueAtTime(0,_AC.currentTime+0.4);n.osc.stop(_AC.currentTime+0.45);}catch(e){}
+  });
+  _scBgmNodes=[];
+}
+
+/* ════════════════════════════════════════════════════════
+   REVEAL FLASH HELPER
+════════════════════════════════════════════════════════ */
+function _triggerRevealFlash(){
+  const el=document.getElementById('reveal-flash');if(!el)return;
+  el.style.transition='none';el.style.opacity='0.9';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    el.style.transition='opacity 0.5s ease';el.style.opacity='0';
+  }));
+}
+
+/* ════════════════════════════════════════════════════════
+   GENDER LOCK
+════════════════════════════════════════════════════════ */
+/* ── Seat lock canvas mode ── */
+function toggleGlockMode(){
+  gcLockMode=!gcLockMode;
+  const btn=document.getElementById('glock-mode-btn');
+  if(btn)btn.classList.toggle('active',gcLockMode);
+  const hint=document.getElementById('glock-hint');
+  if(hint)hint.style.color=gcLockMode?'var(--cyan)':'';
+  if(gcLockMode)toast('자리를 클릭하세요: 없음→♂남→♀여→없음','var(--cyan)');
+  else toast('성별 고정 모드 해제');
+}
+function clearSeatLocks(){
+  if(!Object.keys(S.seatLocks||{}).length){toast('고정된 자리가 없습니다.');return;}
+  if(!confirm('모든 자리 성별 고정을 초기화할까요?'))return;
+  S.seatLocks={};save();drawGroupCanvas();renderSeatLockSummary();
+  toast('자리 성별 고정 초기화 완료!','var(--gold)');
+}
+function renderSeatLockSummary(){
+  const el=document.getElementById('seat-lock-summary');if(!el)return;
+  const locks=S.seatLocks||{};
+  const mCount=Object.values(locks).filter(v=>v==='M').length;
+  const fCount=Object.values(locks).filter(v=>v==='F').length;
+  if(!mCount&&!fCount){el.innerHTML='<span>잠긴 자리 없음 — 캔버스에서 고정 모드 활성화 후 클릭</span>';return;}
+  el.innerHTML=`♂남전용: <strong style="color:var(--male)">${mCount}자리</strong> &nbsp;·&nbsp; ♀여전용: <strong style="color:var(--female)">${fCount}자리</strong>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   SEAT-LEVEL LOCK ASSIGNMENT
+════════════════════════════════════════════════════════ */
+function applySeatLockAssignment(pool,asgn){
+  const males=fisherYates(pool.filter(s=>s.gender==='M'));
+  const females=fisherYates(pool.filter(s=>s.gender==='F'));
+  const used=new Set();
+  // Pass 1: locked seats get matching gender
+  S.groups.forEach(g=>{
+    const total=g.rows*g.cols;
+    for(let i=0;i<total;i++){
+      const key=`${g.id}-${i}`;
+      const lock=S.seatLocks[key];if(!lock)continue;
+      const src=lock==='M'?males:females;
+      const idx=src.findIndex(s=>!used.has(s.id));
+      if(idx!==-1){asgn[key]=src[idx].id;used.add(src[idx].id);}
+    }
+  });
+  // Pass 2: remaining students → unlocked seats (evenly distributed)
+  const rem=fisherYates(pool.filter(s=>!used.has(s.id)));
+  // Collect unlocked seat keys per group
+  const groupSlots=S.groups.map(g=>{
+    const total=g.rows*g.cols,unlocked=[];
+    for(let i=0;i<total;i++){const key=`${g.id}-${i}`;if(asgn[key]==null)unlocked.push(key);}
+    return unlocked;
+  });
+  // Count groups that actually have unlocked seats
+  const eligIdx=groupSlots.map((sl,i)=>sl.length>0?i:-1).filter(i=>i>=0);
+  const G2=eligIdx.length||1, N2=rem.length;
+  const base2=Math.floor(N2/G2), extra2=N2%G2;
+  const bonusSet=new Set(fisherYates([...eligIdx]).slice(0,extra2));
+  let si=0;
+  groupSlots.forEach((unlocked,gi)=>{
+    if(!unlocked.length)return;
+    const quota=base2+(bonusSet.has(gi)?1:0);
+    const limit=Math.min(quota,unlocked.length);
+    for(let i=0;i<limit&&si<rem.length;i++,si++) asgn[unlocked[i]]=rem[si].id;
+  });
+}
+
+/* ── Secret mode weight functions ── */
+function _s7wUpd(v){_s7m._w=parseInt(v);const el=document.getElementById('_s7wval');if(el)el.textContent=v;}
+function _s7wapply(){
+  const v=parseInt(document.getElementById('_s7wsel')?.value)||null;
+  if(!v){toast('학생을 선택하세요!','var(--red)');return;}
+  _s7m._wt=v;
+  const w=parseInt(document.getElementById('_s7wslider')?.value)||3;
+  _s7m._w=w;
+  const n=S.students.find(s=>s.id===v)?.name||'?';
+  const st=document.getElementById('_s7wstatus');
+  if(st)st.textContent=`✓ ${n}: ${w}배 가중치 적용 중`;
+  const td=document.getElementById('_td');if(td)td.className='on';
+  toast(`${n} 확률 ${w}x 적용!`,'var(--gold)');
+}
+function _s7wclear(){
+  _s7m._wt=null;_s7m._w=3;
+  const st=document.getElementById('_s7wstatus');if(st)st.textContent='';
+  const sl=document.getElementById('_s7wslider');if(sl)sl.value=3;
+  const sv=document.getElementById('_s7wval');if(sv)sv.textContent=3;
+  if(!_s7m._a){const td=document.getElementById('_td');if(td)td.className='';}
+  // 설정 패널 상태도 동기화
+  const pst=document.getElementById('ps-wstatus');if(pst)pst.textContent='';
+  const psl=document.getElementById('ps-wslider');if(psl)psl.value=3;
+  const psv=document.getElementById('ps-wval');if(psv)psv.textContent=3;
+  toast('가중치 해제됨.');
+}
+
+/* ── 설정 패널 확률 가중치 함수 (Pick Settings Panel) ── */
+function psWUpd(v){
+  _s7m._w=parseInt(v);
+  const el=document.getElementById('ps-wval');if(el)el.textContent=v;
+  // 교사 대시보드 슬라이더도 동기화
+  const dsl=document.getElementById('_s7wslider');if(dsl)dsl.value=v;
+  const dsv=document.getElementById('_s7wval');if(dsv)dsv.textContent=v;
+}
+function psWApply(){
+  const v=parseInt(document.getElementById('ps-wsel')?.value)||null;
+  if(!v){toast('학생을 선택하세요!','var(--red)');return;}
+  _s7m._wt=v;
+  const w=parseInt(document.getElementById('ps-wslider')?.value)||3;
+  _s7m._w=w;
+  const n=S.students.find(s=>s.id===v)?.name||'?';
+  const st=document.getElementById('ps-wstatus');if(st)st.textContent=`✓ ${n}: ${w}배 가중치 적용 중`;
+  const wst=document.getElementById('_s7wstatus');if(wst)wst.textContent=`✓ ${n}: ${w}배 가중치 적용 중`;
+  const td=document.getElementById('_td');if(td)td.className='on';
+  toast(`${n} 확률 ${w}x 적용!`,'var(--gold)');
+}
+function psWClear(){
+  _s7m._wt=null;_s7m._w=3;
+  const st=document.getElementById('ps-wstatus');if(st)st.textContent='';
+  const sl=document.getElementById('ps-wslider');if(sl)sl.value=3;
+  const sv=document.getElementById('ps-wval');if(sv)sv.textContent=3;
+  const wst=document.getElementById('_s7wstatus');if(wst)wst.textContent='';
+  const dsl=document.getElementById('_s7wslider');if(dsl)dsl.value=3;
+  const dsv=document.getElementById('_s7wval');if(dsv)dsv.textContent=3;
+  if(!_s7m._a){const td=document.getElementById('_td');if(td)td.className='';}
+  toast('가중치 해제됨.');
+}
+
+/* ════════════════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════════════════ */
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/* ════════════════════════════════════════════════════════
+   INSTANT MODE TOGGLE
+════════════════════════════════════════════════════════ */
+function toggleInstantMode(v){
+  S.pkCfg.instantMode=v;
+  save();
+  toast(v?'⚡ 즉시 결과 모드 켜짐':'즉시 결과 모드 꺼짐');
+}
+
+/* ════════════════════════════════════════════════════════
+   KEYBOARD SECRET PICK MODE
+   흐름: 숫자 입력 → Enter(또는 2자리 자동) → _s7m 설정
+         → 자동뽑기 클릭 → pickWinner()에서 강제 적용
+════════════════════════════════════════════════════════ */
+let _kbBuf='', _kbTimer=null, _kbHideTimer=null;
+
+function _kbShow(text){
+  const el=document.getElementById('_kb-hud');
+  if(el){el.textContent=text;el.style.display='block';}
+}
+function _kbHide(){
+  // ※ _s7m은 여기서 건드리지 않음 — 강제 지정은 pickWinner()가 호출될 때까지 유지
+  const el=document.getElementById('_kb-hud');
+  if(el)el.style.display='none';
+  _kbBuf='';
+  if(_kbTimer){clearTimeout(_kbTimer);_kbTimer=null;}
+  if(_kbHideTimer){clearTimeout(_kbHideTimer);_kbHideTimer=null;}
+}
+function _kbCommit(){
+  // 모든 타이머 먼저 정리
+  if(_kbTimer){clearTimeout(_kbTimer);_kbTimer=null;}
+  if(_kbHideTimer){clearTimeout(_kbHideTimer);_kbHideTimer=null;}
+
+  const num=parseInt(_kbBuf);
+  _kbBuf=''; // 버퍼 비우기 (타이머 정리 후)
+
+  if(isNaN(num)||num<1){
+    const el=document.getElementById('_kb-hud');
+    if(el)el.style.display='none';
+    return;
+  }
+
+  // 출석 중인 학생 중 해당 번호(id) 검색
+  const student=S.students.find(s=>s.id===num&&s.isPresent);
+  if(student){
+    // _s7m에 강제 지정 → pickWinner()가 호출될 때 이 학생이 당첨됨
+    _s7m._t=student.id;
+    _s7m._o=true;   // 1회 사용 후 자동 해제
+    _s7m._a=true;
+    _s7syncStatus();
+    _kbShow(`#${num} ✓`);
+    _kbHideTimer=setTimeout(_kbHide, 2000); // 2초 후 HUD 숨김 (force는 유지)
+  } else {
+    // 해당 번호 학생 없음(결석 포함)
+    _kbShow(`#${num} ✗`);
+    _kbHideTimer=setTimeout(_kbHide, 900);
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.shiftKey&&e.key==='S'){e.preventDefault();_p9open();}
+  if(e.ctrlKey&&e.key==='.'){e.preventDefault();_p9open();}
+
+  // ── 키보드 시크릿 학생 번호 지정 (발표 뽑기 탭 한정, 최우선 처리) ──
+  const pickActive=document.getElementById('tab-pick')?.classList.contains('active');
+  const focusTag=document.activeElement?.tagName;
+  const inInput=(focusTag==='INPUT'||focusTag==='TEXTAREA'||focusTag==='SELECT');
+
+  if(pickActive&&!inInput&&!e.ctrlKey&&!e.altKey&&!e.metaKey){
+    if(/^[0-9]$/.test(e.key)){
+      e.preventDefault();
+      _kbBuf+=e.key;
+      _kbShow(`#${_kbBuf}`);
+      // 기존 hide 타이머 취소 (입력 중 HUD가 꺼지는 현상 방지)
+      if(_kbHideTimer){clearTimeout(_kbHideTimer);_kbHideTimer=null;}
+      if(_kbBuf.length>=2){
+        // 2자리 완성 → 즉시 확정
+        _kbCommit();
+      } else {
+        // 1자리 → 1.5초 후 자동 확정 (Enter로 즉시 확정 가능)
+        if(_kbTimer)clearTimeout(_kbTimer);
+        _kbTimer=setTimeout(_kbCommit,1500);
+      }
+      return; // 이하 핸들러 실행 방지
+    }
+    if(e.key==='Enter'&&_kbBuf.length>0){
+      e.preventDefault();
+      _kbCommit();
+      return;
+    }
+    if(e.key==='Escape'&&_kbBuf.length>0){
+      e.preventDefault();
+      _kbHide();
+      return;
+    }
+  }
+
+  if(e.key==='Enter'&&document.activeElement.id==='add-name')addStudent();
+  if(e.key==='Escape'&&S.editId!==null)cancelEdit();
+  if(e.key==='Enter'&&S.editId!==null&&document.activeElement.id===`en-${S.editId}`)saveEdit(S.editId);
+  if(e.key==='Escape'){_p9close();_s7close();}
+});
+
+/* ════════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════════ */
+load();
+// 반이 하나도 없으면 기본 반 생성
+if(!S.classes.length){
+  const id=Date.now();
+  const defaultCls={id,name:'1반',students:[],pick:{history:[],noRepeat:false},assignment:{},seatLocks:{}};
+  S.classes=[defaultCls];
+  S.activeClassId=id;
+}
+if(S.groups.length===0){createDefaultGroups();applyPreset('rows',false);}
+renderAll();
+if(document.getElementById('tab-pick').classList.contains('active'))initPickTab();
+
+// 창 크기 변경 시 캔버스 반응형 리사이즈
+let _resizeTimer=null;
+window.addEventListener('resize',()=>{
+  clearTimeout(_resizeTimer);
+  _resizeTimer=setTimeout(()=>{
+    if(_PB._ready)pbScaleCanvas();
+    if(gcCtx){resizeGroupCanvas();drawGroupCanvas();}
+    if(document.getElementById('tab-pick')?.classList.contains('active'))resizePickCanvas();
+  },80);
+});
+</script>
+</body>
+</html>
