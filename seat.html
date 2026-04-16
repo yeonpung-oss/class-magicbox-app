@@ -1829,7 +1829,7 @@ function initCapsules(){
     let x,y,tries=0;
     do{const a=Math.random()*Math.PI*2,d=(0.1+Math.random()*0.72)*(CR-r-4);x=CCX+Math.cos(a)*d;y=CCY+Math.sin(a)*d*0.88;tries++;}
     while(tries<60&&caps.some(c=>Math.hypot(c.x-x,c.y-y)<r*2.1));
-    caps.push({id:s.id,x,y,vx:0,vy:0,r,color:CAP_COLORS[i%CAP_COLORS.length],num:i+1,alpha:1,scale:1});
+    caps.push({id:s.id,x,y,vx:0,vy:0,r,color:CAP_COLORS[i%CAP_COLORS.length],num:s.id,alpha:1,scale:1});
   });
 }
 
