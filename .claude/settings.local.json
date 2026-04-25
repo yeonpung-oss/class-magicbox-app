@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(claude install:*)",
+      "mcp__github__create_repository",
+      "Bash(gh auth:*)",
+      "Bash(where gh:*)",
+      "Bash(where git:*)",
+      "Bash(git config:*)",
+      "Bash(env)",
+      "Bash(find ~/.claude -name *.json)",
+      "Bash(xargs grep:*)",
+      "Bash(echo \"GITHUB_PERSONAL_ACCESS_TOKEN: $GITHUB_PERSONAL_ACCESS_TOKEN:-NOT_SET\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(find /c/Users/서종원 -name *.json)",
+      "Bash(python3:*)"
+    ]
+  }
+}
