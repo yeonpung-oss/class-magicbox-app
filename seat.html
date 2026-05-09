@@ -192,7 +192,7 @@
     /* ── Order tab (Pinball) ── */
     .order-layout { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; align-items: start; }
     .order-left { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; height: 100%; min-height: 0; }
-    .order-canvas-wrap { display: flex; justify-content: center; align-items: flex-start; overflow: hidden; }
+    .order-canvas-wrap { display: flex; justify-content: center; align-items: flex-start; overflow: hidden; height: 100%; }
     #order-canvas { border-radius: 12px; border: 1px solid rgba(0,229,255,.2); box-shadow: 0 0 40px rgba(0,229,255,.12), 0 0 80px rgba(0,229,255,.06); display: block; }
     .order-result-item { display:flex; align-items:center; gap:8px; padding:6px 10px; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:600; animation:pbSlideIn .22s ease-out; }
     @keyframes pbSlideIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:none; } }
@@ -202,7 +202,7 @@
     .order-rank.bronze { color:#d0905a;       border-color:rgba(208,144,90,.4);  background:rgba(208,144,90,.07); }
     .order-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
     #capsule-canvas.manual-mode { cursor: crosshair; }
-    .pick-controls { display: flex; gap: 10px; margin-top: 14px; }
+    .pick-controls { display: flex; gap: 10px; }
     .pick-controls .btn { flex: 1; }
     #pick-hint { text-align: center; margin-top: 8px; min-height: 20px; }
     .toggle-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -449,20 +449,49 @@
       #group-canvas { border: none !important; width: 100% !important; }
     }
     /* ── Team tab ── */
-    .team-layout { display: grid; grid-template-columns: 290px 1fr; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; }
-    .team-layout > .right-stack { overflow-y: auto; min-height: 0; }
+    /* ── Team Layout (3-column wide) ── */
+    .team-layout { display: grid; grid-template-columns: 252px 1fr 236px; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; }
     .team-layout > .card { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .team-layout > .right-stack { overflow-y: auto; min-height: 0; gap: 10px; }
     .team-attr-wrap { overflow-y: auto; flex: 1; min-height: 0; }
     .team-attr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .team-attr-table th { color: var(--txt2); font-size: 11px; font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: left; position: sticky; top: 0; background: var(--card); z-index: 1; }
     .team-attr-table td { padding: 4px 6px; border-bottom: 1px solid rgba(28,45,79,.25); vertical-align: middle; }
-    .team-attr-table input[type=number] { width: 58px; background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); padding: 3px 5px; font-size: 12px; width: 100%; }
+    .team-attr-table input[type=number] { background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); padding: 3px 5px; font-size: 12px; width: 100%; }
     .team-attr-table select.attr-sel { background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); padding: 3px 5px; font-size: 12px; width: 100%; }
-    .team-result-area { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
-    .team-block { border-radius: 10px; padding: 12px 14px; border: 2px solid; }
-    .team-block-title { font-size: 13px; font-weight: 900; margin-bottom: 8px; }
-    .team-member-list { display: flex; flex-wrap: wrap; gap: 5px; }
-    .team-chip { padding: 3px 10px; border-radius: 14px; font-size: 12px; font-weight: 700; border: 1px solid; }
+
+    /* ── Team Center Panel ── */
+    .team-center-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; }
+    .team-idle { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 18px; }
+    .team-idle-icon { font-size: 80px; animation: idleBounce 2s ease-in-out infinite; }
+    .team-idle-text { font-size: 20px; font-weight: 900; color: var(--txt2); letter-spacing: 1px; }
+    .team-idle-sub { font-size: 13px; color: rgba(150,170,210,.6); }
+    .team-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; overflow-y: auto; align-content: start; flex: 1; padding: 2px 2px 6px; }
+
+    /* ── Team Card Animations ── */
+    @keyframes idleBounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+    @keyframes teamCardIn { 0%{transform:translateY(-28px) scale(.82);opacity:0} 60%{transform:translateY(5px) scale(1.04);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+    @keyframes chipPop { 0%{transform:scale(0) rotate(-12deg);opacity:0} 65%{transform:scale(1.18) rotate(2deg);opacity:1} 100%{transform:scale(1) rotate(0);opacity:1} }
+    @keyframes shimmerSlide { 0%{transform:translateX(-120%)} 100%{transform:translateX(220%)} }
+    @keyframes glow { 0%,100%{opacity:.4} 50%{opacity:1} }
+    @keyframes mascotSpin { 0%{transform:rotateY(0deg)} 50%{transform:rotateY(180deg)} 100%{transform:rotateY(360deg)} }
+
+    .team-card { border-radius: 16px; border: 2px solid; padding: 16px 16px 14px; position: relative; overflow: hidden; opacity: 0; }
+    .team-card.revealed { animation: teamCardIn .52s cubic-bezier(.34,1.4,.64,1) forwards; }
+    .team-card-shimmer { position:absolute; top:0; left:0; width:50%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent); animation: shimmerSlide 2.8s 1s infinite; pointer-events:none; }
+    .team-card-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .team-mascot { font-size:34px; display:inline-block; }
+    .team-mascot.spin { animation: mascotSpin .6s ease-in-out; }
+    .team-name-badge { font-size:22px; font-weight:900; flex:1; }
+    .team-count-pill { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; border:1px solid; opacity:.75; }
+    .team-members-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+    .team-chip { padding:5px 13px; border-radius:20px; font-size:13px; font-weight:700; border:1px solid; opacity:0; display:inline-flex; align-items:center; gap:4px; }
+    .team-chip.popped { animation: chipPop .35s cubic-bezier(.34,1.4,.64,1) forwards; }
+    .tc-gender { font-size:11px; opacity:.75; }
+
+    /* ── Confetti ── */
+    .confetti-piece { position:fixed; width:9px; height:9px; border-radius:2px; pointer-events:none; z-index:9999; }
+    @keyframes confettiFly { 0%{transform:translate(0,0) rotate(0deg);opacity:1} 100%{transform:translate(var(--cx),var(--cy)) rotate(var(--cr));opacity:0} }
     @media (max-width: 900px) {
       .tab-pane.active { overflow-y: auto; }
       .seat-tab-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
@@ -477,6 +506,7 @@
       .mgmt-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
       .team-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
       .team-layout > .card { overflow: visible; }
+      .team-center-panel { min-height: 400px; }
       .team-attr-wrap { overflow: visible; max-height: none; }
     }
     @media (max-height: 600px) {
@@ -558,7 +588,7 @@
     .ep-footer-note { font-size: 12px; color: var(--txt2); flex: 1; }
 
     /* ── Seat-level Gender Lock (Stage 5) ── */
-    #glock-mode-btn { width:100%; margin-top:10px; padding:7px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--txt2); font-family:'Noto Sans KR',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
+    #glock-mode-btn { padding:7px; border:1px solid var(--border); border-radius:7px; background:transparent; color:var(--txt2); font-family:'Noto Sans KR',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
     #glock-mode-btn:hover { border-color:var(--cyan-d); color:var(--cyan); }
     #glock-mode-btn.active { background:rgba(0,229,255,.1); border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 10px rgba(0,229,255,.15); }
     /* Secret mode weight section */
@@ -745,21 +775,7 @@
   <div class="seat-tab-layout">
     <div class="card">
       <div class="card-title">🏫 교실 배치도 <span class="hint" style="font-weight:400;margin-left:4px;font-size:12px;">모둠 블록을 드래그하여 이동</span></div>
-      <canvas id="group-canvas" width="1600" height="1040"></canvas>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
-        <button id="glock-mode-btn" onclick="toggleGlockMode()" style="flex:1;">🔒 자리 성별 고정 모드</button>
-        <button class="btn btn-ghost btn-sm" onclick="clearSeatLocks()" title="모든 자리 잠금 초기화" style="padding:7px 10px;flex-shrink:0;">🗑 초기화</button>
-      </div>
-      <p class="hint" style="margin-top:6px;font-size:11px;" id="glock-hint">모드 활성화 후 자리를 클릭: 없음 → ♂남 → ♀여 → 없음 순환</p>
-      <div style="margin-top:12px;">
-        <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.5px;margin-bottom:8px;">📐 레이아웃 프리셋</div>
-        <div class="preset-btns">
-          <button class="preset-btn" onclick="applyPreset('rows')">➡ ㅡ자 (행렬)</button>
-          <button class="preset-btn" onclick="applyPreset('square')">⬜ ㅁ자 (사방)</button>
-          <button class="preset-btn" onclick="applyPreset('c')">↩ ㄷ자 형</button>
-          <button class="preset-btn" onclick="applyPreset('pairs')">👫 전통 짝꿍</button>
-        </div>
-      </div>
+      <canvas id="group-canvas" width="1920" height="880"></canvas>
     </div>
     <div class="right-stack">
       <div class="card">
@@ -792,6 +808,15 @@
         </div>
       </div>
       <div class="card">
+        <div class="card-title">📐 레이아웃 프리셋</div>
+        <div class="preset-btns">
+          <button class="preset-btn" onclick="applyPreset('rows')">➡ ㅡ자 (행렬)</button>
+          <button class="preset-btn" onclick="applyPreset('square')">⬜ ㅁ자 (사방)</button>
+          <button class="preset-btn" onclick="applyPreset('c')">↩ ㄷ자 형</button>
+          <button class="preset-btn" onclick="applyPreset('pairs')">👫 전통 짝꿍</button>
+        </div>
+      </div>
+      <div class="card">
         <div class="card-title">🎯 제약 조건</div>
         <label class="toggle-row" style="margin-bottom:14px;">
           <span>모둠 내 성별 균형</span>
@@ -809,7 +834,12 @@
         </div>
         <hr>
         <div style="margin-top:10px;">
-          <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.3px;margin-bottom:6px;">🔒 자리 성별 고정 현황</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+            <button id="glock-mode-btn" onclick="toggleGlockMode()" style="flex:1;font-size:12px;padding:7px 8px;">🔒 성별 고정 모드</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearSeatLocks()" title="모든 자리 잠금 초기화" style="padding:7px 10px;flex-shrink:0;">🗑</button>
+          </div>
+          <p class="hint" style="margin:4px 0 8px;font-size:11px;" id="glock-hint">활성화 후 자리 클릭: 없음 → ♂남 → ♀여 → 없음</p>
+          <div style="font-size:11px;font-weight:900;color:var(--txt2);letter-spacing:.3px;margin-bottom:4px;">🔒 자리 성별 고정 현황</div>
           <div id="seat-lock-summary" class="hint" style="font-size:11px;"></div>
         </div>
       </div>
@@ -873,14 +903,14 @@
         </div>
       </div>
       <canvas id="capsule-canvas" width="500" height="430"></canvas>
-      <div class="pick-controls">
-        <button class="btn btn-gold btn-shuffle" onclick="startAutoPick()">🎲 자동 뽑기</button>
-        <button class="btn btn-ghost" id="manual-btn" onclick="toggleManual()">👆 직접 선택</button>
-      </div>
-      <p class="hint" id="pick-hint"></p>
+      <p class="hint" id="pick-hint" style="margin:6px 0 0;text-align:center;"></p>
     </div>
     <div class="right-stack">
       <div class="card">
+        <div class="pick-controls" style="margin-bottom:12px;">
+          <button class="btn btn-gold btn-shuffle" onclick="startAutoPick()">🎲 자동 뽑기</button>
+          <button class="btn btn-ghost" id="manual-btn" onclick="toggleManual()">👆 직접 선택</button>
+        </div>
         <div class="card-title">⚙️ 뽑기 설정</div>
         <label class="toggle-row" style="margin-bottom:10px;">
           <span>⚡ 즉시 결과 모드</span>
@@ -1008,7 +1038,38 @@
 <!-- ══ TAB: 팀 나누기 ══ -->
 <div id="tab-team" class="tab-pane">
   <div class="team-layout">
-    <!-- 왼쪽: 설정 + 팀 결과 -->
+
+    <!-- 왼쪽: 학생 체육 정보 -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;flex-shrink:0;">
+        <span>🏃 체육 정보</span>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" onclick="downloadTeamAttrXlsx()" title="엑셀 양식 다운로드">⬇ 양식</button>
+          <button class="btn btn-cyan btn-sm" onclick="document.getElementById('team-xl-input').click()" title="엑셀 업로드">📂 업로드</button>
+          <input type="file" id="team-xl-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleTeamAttrXlsx(event)">
+        </div>
+      </div>
+      <p class="hint" style="margin-bottom:8px;flex-shrink:0;font-size:11px;">키·체육숙달도를 입력 후 균형 팀 나누기에 사용할 수 있어요.</p>
+      <div class="team-attr-wrap" id="team-attr-wrap"></div>
+    </div>
+
+    <!-- 가운데: 팀 결과 (애니메이션) -->
+    <div class="team-center-panel">
+      <div class="card-title" style="flex-shrink:0;">
+        🏆 팀 결과
+        <span id="team-count-badge" class="nbadge" style="margin-left:6px;display:none;">0팀</span>
+      </div>
+      <!-- 대기 화면 -->
+      <div id="team-idle" class="team-idle">
+        <div class="team-idle-icon">⚽</div>
+        <div class="team-idle-text">팀을 나눠봐요!</div>
+        <div class="team-idle-sub">오른쪽 설정에서 팀 수를 정하고<br>팀 나누기 시작 버튼을 눌러보세요 🎉</div>
+      </div>
+      <!-- 결과 그리드 -->
+      <div id="team-result-list" class="team-result-grid" style="display:none;"></div>
+    </div>
+
+    <!-- 오른쪽: 설정 -->
     <div class="right-stack">
       <div class="card">
         <div class="card-title">⚽ 팀 나누기 설정</div>
@@ -1021,35 +1082,15 @@
           </div>
         </div>
         <hr style="margin:12px 0 10px;">
-        <div style="font-size:12px;font-weight:900;color:var(--txt2);letter-spacing:.5px;margin-bottom:10px;">⚖️ 균형 기준 선택</div>
+        <div style="font-size:12px;font-weight:900;color:var(--txt2);letter-spacing:.5px;margin-bottom:10px;">⚖️ 균형 기준</div>
         <label class="toggle-row" style="margin-bottom:9px;"><span>성별 균형</span><input type="checkbox" id="team-bal-gender" checked onchange="teamCfgSave()"></label>
         <label class="toggle-row" style="margin-bottom:9px;"><span>키 균형</span><input type="checkbox" id="team-bal-height" onchange="teamCfgSave()"></label>
-        <label class="toggle-row" style="margin-bottom:9px;"><span>체육 숙달도 균형</span><input type="checkbox" id="team-bal-fitness" onchange="teamCfgSave()"></label>
-        <label class="toggle-row" style="margin-bottom:14px;"><span>신체 사이즈 균형</span><input type="checkbox" id="team-bal-bodysize" onchange="teamCfgSave()"></label>
-        <button class="btn btn-gold btn-full" onclick="generateTeams()">⚽ 팀 나누기 시작</button>
-        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;" id="team-reshuffle-btn" onclick="reshuffleTeams()" style="display:none;">🔀 다시 섞기</button>
-      </div>
-      <div class="card" id="team-result-card" style="display:none;">
-        <div class="card-title" style="justify-content:space-between;">
-          <span>📋 팀 결과</span>
-          <span id="team-count-badge" class="nbadge">0팀</span>
-        </div>
-        <div id="team-result-list" class="team-result-area"></div>
+        <label class="toggle-row" style="margin-bottom:14px;"><span>체육 숙달도 균형</span><input type="checkbox" id="team-bal-fitness" onchange="teamCfgSave()"></label>
+        <button class="btn btn-gold btn-full" onclick="generateTeams()">⚽ 팀 나누기 시작!</button>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;display:none;" id="team-reshuffle-btn" onclick="reshuffleTeams()">🔀 다시 섞기</button>
       </div>
     </div>
-    <!-- 오른쪽: 학생 체육 정보 입력 -->
-    <div class="card">
-      <div class="card-title" style="justify-content:space-between;flex-shrink:0;">
-        <span>🏃 학생 체육 정보</span>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-ghost btn-sm" onclick="downloadTeamAttrXlsx()" title="엑셀 양식 다운로드">⬇ 양식 다운로드</button>
-          <button class="btn btn-cyan btn-sm" onclick="document.getElementById('team-xl-input').click()" title="엑셀 업로드">📂 엑셀 업로드</button>
-          <input type="file" id="team-xl-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleTeamAttrXlsx(event)">
-        </div>
-      </div>
-      <p class="hint" style="margin-bottom:10px;flex-shrink:0;">양식을 다운로드 후 키·신체 사이즈·체육 숙달도를 입력하여 업로드하면 DB에 저장되어 계속 사용할 수 있어요. 직접 입력도 가능합니다.</p>
-      <div class="team-attr-wrap" id="team-attr-wrap"></div>
-    </div>
+
   </div>
 </div>
 
@@ -1090,7 +1131,7 @@ let S = {
   students: [],
   groups: [],
   groupCfg: { count:6, seatsPerGroup:4, shuffleScope:'all', genderBalance:false, separation:[] },
-  teamCfg: { count:2, balGender:true, balHeight:false, balFitness:false, balBodySize:false },
+  teamCfg: { count:2, balGender:true, balHeight:false, balFitness:false },
   teams: [],
   assignment: {},
   seatLocks: {},   // key "gId-sIdx" → 'M'|'F'
@@ -1463,7 +1504,7 @@ function syncGroupUI(){
 /* ════════════════════════════════════════════════════════
    GROUP CANVAS (Stage 4)
 ════════════════════════════════════════════════════════ */
-const GC={W:1600,H:1040,SW:120,SH:96,GS:10,GP:18,GT:40};
+const GC={W:1920,H:880,SW:144,SH:115,GS:14,GP:22,GT:48};
 const GROUP_FILL=['#0b2540','#0b3120','#36102a','#36280a','#190a36','#0a2030','#36180a','#181836'];
 const GROUP_BORDER=['#4fc3f7','#4caf50','#f06292','#ffb74d','#ab47bc','#26c6da','#ff7043','#7986cb'];
 
@@ -1501,7 +1542,7 @@ function resizeGroupCanvas(){
   const cardPadV=(parseInt(getComputedStyle(card).paddingTop)||0)+(parseInt(getComputedStyle(card).paddingBottom)||0);
   const availW=Math.max(60, card.clientWidth-44);
   const availH=Math.max(60, card.clientHeight-cardPadV-nonCanvasH-10);
-  const scale=Math.min(availW/GC.W, availH/GC.H, 1);
+  const scale=Math.min(availW/GC.W, availH/GC.H);
   canvas.style.width=Math.round(GC.W*scale)+'px';
   canvas.style.height=Math.round(GC.H*scale)+'px';
 }
@@ -1554,15 +1595,15 @@ function drawGroupCanvas(){
   ctx.fillStyle='#060c1e'; ctx.fillRect(0,0,GC.W,GC.H);
   // Dot grid
   ctx.fillStyle='rgba(28,45,79,.35)';
-  for(let x=60;x<GC.W;x+=80)for(let y=60;y<GC.H;y+=80){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}
+  for(let x=60;x<GC.W;x+=96)for(let y=60;y<GC.H;y+=96){ctx.beginPath();ctx.arc(x,y,2,0,Math.PI*2);ctx.fill();}
 
   // Teacher desk
-  const dW=400,dH=60,dX=(GC.W-dW)/2,dY=20;
+  const dW=480,dH=72,dX=(GC.W-dW)/2,dY=22;
   const dg=ctx.createLinearGradient(dX,dY,dX+dW,dY+dH);
   dg.addColorStop(0,'rgba(255,215,0,.13)');dg.addColorStop(1,'rgba(255,215,0,.05)');
   ctx.fillStyle=dg;ctx.beginPath();ctx.roundRect(dX,dY,dW,dH,12);ctx.fill();
   ctx.strokeStyle='rgba(255,215,0,.5)';ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle='rgba(255,215,0,.9)';ctx.font='bold 24px "Noto Sans KR",sans-serif';
+  ctx.fillStyle='rgba(255,215,0,.9)';ctx.font='bold 28px "Noto Sans KR",sans-serif';
   ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('📋 교  탁',dX+dW/2,dY+dH/2);
 
   // Groups
@@ -1579,7 +1620,7 @@ function drawGroup(ctx,g,idx){
   ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   ctx.strokeStyle=bc;ctx.lineWidth=3;ctx.stroke();
   // Label
-  ctx.fillStyle=bc;ctx.font='bold 22px "Noto Sans KR",sans-serif';
+  ctx.fillStyle=bc;ctx.font='bold 26px "Noto Sans KR",sans-serif';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(`${g.id}모둠`,g.x+w/2,g.y+GC.GT/2);
   // Seats
@@ -1606,20 +1647,20 @@ function drawSeat(ctx,x,y,groupId,seatIdx,groupColor){
   // Seat lock badge (top-right corner)
   if(seatLock){
     ctx.fillStyle=seatLock==='M'?'rgba(79,195,247,.85)':'rgba(192,132,252,.85)';
-    ctx.font='bold 18px sans-serif';ctx.textAlign='right';ctx.textBaseline='top';
+    ctx.font='bold 22px sans-serif';ctx.textAlign='right';ctx.textBaseline='top';
     ctx.fillText(seatLock==='M'?'♂':'♀',x+GC.SW-4,y+4);
   }
   if(student){
     ctx.fillStyle=isM?'#b3e5fc':'#e1bee7';
-    const fontSize=student.name.length>3?20:24;
+    const fontSize=student.name.length>3?24:29;
     ctx.font=`bold ${fontSize}px "Noto Sans KR",sans-serif`;
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(student.name,x+GC.SW/2,y+GC.SH/2-8);
-    ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='18px sans-serif';
-    ctx.fillText(isM?'♂':'♀',x+GC.SW/2,y+GC.SH/2+16);
+    ctx.fillText(student.name,x+GC.SW/2,y+GC.SH/2-10);
+    ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='22px sans-serif';
+    ctx.fillText(isM?'♂':'♀',x+GC.SW/2,y+GC.SH/2+20);
   } else {
     ctx.fillStyle=seatLock?'rgba(120,160,200,.5)':'rgba(90,110,150,.4)';
-    ctx.font='22px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.font='27px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText('🪑',x+GC.SW/2,y+GC.SH/2);
   }
 }
@@ -1718,7 +1759,7 @@ function applyPreset(preset,doSave=true){
   S.groups.forEach(g=>{g.cols=pairMode?1:cols;g.rows=pairMode?2:rows;});
 
   const n=S.groups.length;
-  const pad=40,topY=96,hgap=28,vgap=28;
+  const pad=48,topY=104,hgap=40,vgap=34;
   const gw=S.groups[0]?groupBlockSize(S.groups[0]).w:100;
   const gh=S.groups[0]?groupBlockSize(S.groups[0]).h:100;
 
@@ -2594,12 +2635,10 @@ function pbSetupCanvas(){
 
 function pbScaleCanvas(){
   const cv=_PB.cv||document.getElementById('order-canvas'); if(!cv)return;
-  const headerH=document.querySelector('header')?.offsetHeight||62;
-  const availH=window.innerHeight-headerH-24;
-  const availW=window.innerWidth-(document.querySelector('.order-left')?.offsetWidth||220)-30;
-  const scaleH=availH/_PB.CH;
-  const scaleW=availW/_PB.CW;
-  const scale=Math.min(scaleH,scaleW,1);
+  const wrap=document.getElementById('order-canvas-wrap')||cv.parentElement;
+  const availW=Math.max(100, wrap.clientWidth-4);
+  const availH=Math.max(100, wrap.clientHeight-4);
+  const scale=Math.min(availW/_PB.CW, availH/_PB.CH);
   cv.style.width=Math.round(_PB.CW*scale)+'px';
   cv.style.height=Math.round(_PB.CH*scale)+'px';
 }
@@ -3288,7 +3327,7 @@ function renderStudents(){
    STUDENT CRUD
 ════════════════════════════════════════════════════════ */
 function nextId(){return S.students.length===0?1:Math.max(...S.students.map(s=>s.id))+1;}
-function mkStudent(name,gender){return{id:nextId(),name,gender,fixedSeat:null,isPresent:true,pickCount:0,height:null,bodySize:null,fitness:null};}
+function mkStudent(name,gender){return{id:nextId(),name,gender,fixedSeat:null,isPresent:true,pickCount:0,height:null,fitness:null};}
 function addStudent(){
   const nameEl=document.getElementById('add-name'), name=nameEl.value.trim();
   if(!name){toast('이름을 입력해 주세요!','var(--red)');nameEl.focus();return;}
@@ -4140,14 +4179,12 @@ function teamCfgSave(){
   S.teamCfg.balGender  =document.getElementById('team-bal-gender')?.checked??true;
   S.teamCfg.balHeight  =document.getElementById('team-bal-height')?.checked??false;
   S.teamCfg.balFitness =document.getElementById('team-bal-fitness')?.checked??false;
-  S.teamCfg.balBodySize=document.getElementById('team-bal-bodysize')?.checked??false;
   save();
 }
 
 function saveStudentAttr(id,field,val){
   const s=S.students.find(x=>x.id===id); if(!s)return;
   if(field==='height') s.height=val?parseInt(val)||null:null;
-  else if(field==='bodySize') s.bodySize=val||null;
   else if(field==='fitness') s.fitness=val?parseInt(val)||null:null;
   save();
 }
@@ -4165,9 +4202,6 @@ function calcScore(s){
   let score=0;
   if(S.teamCfg.balHeight&&s.height)   score+=s.height/200;
   if(S.teamCfg.balFitness&&s.fitness) score+=s.fitness/5;
-  if(S.teamCfg.balBodySize&&s.bodySize){
-    score+={S:0.2,M:0.4,L:0.7,XL:1.0}[s.bodySize]||0;
-  }
   return score;
 }
 
@@ -4191,36 +4225,70 @@ function generateTeams(){
 
   S.teams=teams;
   save();
-  renderTeamResults();
+  renderTeamResults(true);
+  burstConfetti();
   toast('팀이 나뉘었습니다! 🎉','var(--gold)');
 }
 
 function reshuffleTeams(){
-  generateTeams();
+  const list=document.getElementById('team-result-list');
+  if(list){list.style.opacity='0';list.style.transition='opacity .2s';}
+  setTimeout(()=>{if(list){list.style.opacity='';list.style.transition='';}generateTeams();},200);
 }
 
-function renderTeamResults(){
-  const card=document.getElementById('team-result-card');
+const TEAM_MASCOTS=['🦁','🐯','🐻','🦊','🐼','🦄','🐉','🦅'];
+
+function burstConfetti(){
+  const colors=['#ef5350','#4fc3f7','#ffd700','#4caf50','#c084fc','#fb923c','#22d3ee','#f472b6'];
+  const cx=window.innerWidth/2, cy=window.innerHeight/2;
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    const angle=Math.random()*Math.PI*2;
+    const dist=120+Math.random()*260;
+    const tx=Math.cos(angle)*dist, ty=Math.sin(angle)*dist-180;
+    el.style.cssText=`left:${cx}px;top:${cy}px;background:${colors[i%colors.length]};--cx:${tx}px;--cy:${ty}px;--cr:${Math.random()*720-360}deg;animation:confettiFly ${.7+Math.random()*.8}s ${Math.random()*.3}s cubic-bezier(.25,.46,.45,.94) forwards;`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend',()=>el.remove());
+  }
+}
+
+function renderTeamResults(animate=false){
+  const idle=document.getElementById('team-idle');
   const list=document.getElementById('team-result-list');
   const badge=document.getElementById('team-count-badge');
   const reshuffleBtn=document.getElementById('team-reshuffle-btn');
-  if(!card||!list)return;
-  if(!S.teams||!S.teams.length){card.style.display='none';if(reshuffleBtn)reshuffleBtn.style.display='none';return;}
-  card.style.display='';
+  if(!list)return;
+  if(!S.teams||!S.teams.length){
+    if(idle)idle.style.display='';
+    list.style.display='none';
+    if(badge)badge.style.display='none';
+    if(reshuffleBtn)reshuffleBtn.style.display='none';
+    return;
+  }
+  if(idle)idle.style.display='none';
+  list.style.display='';
+  if(badge){badge.style.display='';badge.textContent=`${S.teams.length}팀`;}
   if(reshuffleBtn)reshuffleBtn.style.display='';
-  if(badge)badge.textContent=`${S.teams.length}팀`;
 
   list.innerHTML=S.teams.map((t,i)=>{
     const col=TEAM_COLORS[i%TEAM_COLORS.length];
-    const members=t.members.map(sid=>{
-      const s=S.students.find(x=>x.id===sid);
-      if(!s)return'';
-      const gColor=s.gender==='M'?'var(--male)':'var(--female)';
-      return`<span class="team-chip" style="background:${col.chip};border-color:${col.border};color:${col.text};">${escHtml(s.name)}<span style="color:${gColor};font-size:10px;margin-left:3px;">${s.gender==='M'?'♂':'♀'}</span></span>`;
+    const mascot=TEAM_MASCOTS[i%TEAM_MASCOTS.length];
+    const chips=t.members.map((sid,mi)=>{
+      const s=S.students.find(x=>x.id===sid); if(!s)return'';
+      const gc=s.gender==='M'?'var(--male)':'var(--female)';
+      const delay=(animate?(i*.12+mi*.06):0).toFixed(2);
+      return`<span class="team-chip${animate?' popped':''}" style="background:${col.chip};border-color:${col.border};color:${col.text};animation-delay:${delay}s;">${escHtml(s.name)}<span class="tc-gender" style="color:${gc};">${s.gender==='M'?'♂':'♀'}</span></span>`;
     }).join('');
-    return`<div class="team-block" style="background:${col.bg};border-color:${col.border};">
-      <div class="team-block-title" style="color:${col.text};">${i+1}팀 <span style="font-weight:400;font-size:11px;color:var(--txt2);">(${t.members.length}명)</span></div>
-      <div class="team-member-list">${members}</div>
+    const cardDelay=animate?(i*.1).toFixed(2):'0';
+    return`<div class="team-card${animate?' revealed':''}" style="background:${col.bg};border-color:${col.border};animation-delay:${cardDelay}s;">
+      <div class="team-card-shimmer"></div>
+      <div class="team-card-header">
+        <span class="team-mascot${animate?' spin':''}">${mascot}</span>
+        <span class="team-name-badge" style="color:${col.text};">${i+1}팀</span>
+        <span class="team-count-pill" style="color:${col.text};border-color:${col.border};">${t.members.length}명</span>
+      </div>
+      <div class="team-members-wrap">${chips}</div>
     </div>`;
   }).join('');
 }
@@ -4233,38 +4301,32 @@ function renderTeamAttrTable(){
   }
   const rows=S.students.map(s=>{
     const h=s.height??'';
-    const bs=s.bodySize||'';
     const ft=s.fitness||'';
-    const bsSel=['','S','M','L','XL'].map(v=>`<option value="${v}"${bs===v?' selected':''}>${v||'미입력'}</option>`).join('');
     const ftSel=['','1','2','3','4','5'].map(v=>`<option value="${v}"${ft==v?' selected':''}>${v?v+'점':'미입력'}</option>`).join('');
     const gc=s.gender==='M'?'var(--male)':'var(--female)';
     return`<tr>
       <td style="color:var(--txt2);font-size:11px;">${s.id}</td>
       <td><strong>${escHtml(s.name)}</strong></td>
       <td><span style="color:${gc};font-size:12px;">${s.gender==='M'?'남':'여'}</span></td>
-      <td><input type="number" min="100" max="220" value="${h}" placeholder="cm" style="width:64px;" onchange="saveStudentAttr(${s.id},'height',this.value)"></td>
-      <td><select class="attr-sel" onchange="saveStudentAttr(${s.id},'bodySize',this.value)">${bsSel}</select></td>
+      <td><input type="number" min="100" max="220" value="${h}" placeholder="cm" onchange="saveStudentAttr(${s.id},'height',this.value)"></td>
       <td><select class="attr-sel" onchange="saveStudentAttr(${s.id},'fitness',this.value)">${ftSel}</select></td>
     </tr>`;
   }).join('');
-  wrap.innerHTML=`<table class="team-attr-table"><thead><tr><th>No.</th><th>이름</th><th>성별</th><th>키(cm)</th><th>신체사이즈</th><th>체육숙달도</th></tr></thead><tbody>${rows}</tbody></table>`;
+  wrap.innerHTML=`<table class="team-attr-table"><thead><tr><th>No.</th><th>이름</th><th>성별</th><th>키(cm)</th><th>숙달도</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function downloadTeamAttrXlsx(){
   if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로딩 중...','var(--txt2)');return;}
   const wb=XLSX.utils.book_new();
-  const header=['번호','이름','성별','키(cm)','신체사이즈(S/M/L/XL)','체육숙달도(1-5)'];
+  const header=['번호','이름','성별','키(cm)','체육숙달도(1-5)'];
   const rows=S.students.map(s=>[
     s.id, s.name, s.gender==='M'?'남':'여',
-    s.height??'', s.bodySize??'', s.fitness??''
+    s.height??'', s.fitness??''
   ]);
   const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
-  // 열 너비 설정
-  ws['!cols']=[{wch:6},{wch:12},{wch:6},{wch:10},{wch:18},{wch:14}];
-  // 양식 안내 행 (하단)
+  ws['!cols']=[{wch:6},{wch:12},{wch:6},{wch:10},{wch:16}];
   const noteRow=S.students.length+2;
-  XLSX.utils.sheet_add_aoa(ws,[['※ 신체사이즈: S / M / L / XL 중 하나만 입력','','','','','']],{origin:noteRow});
-  XLSX.utils.sheet_add_aoa(ws,[['※ 체육숙달도: 1(매우낮음) ~ 5(매우높음) 숫자만 입력','','','','','']],{origin:noteRow+1});
+  XLSX.utils.sheet_add_aoa(ws,[['※ 체육숙달도: 1(매우낮음) ~ 5(매우높음) 숫자만 입력','','','','']],{origin:noteRow});
   XLSX.utils.book_append_sheet(wb,ws,'체육정보');
   XLSX.writeFile(wb,'체육정보_입력양식.xlsx');
   toast('양식 다운로드 완료!','var(--cyan)');
@@ -4291,9 +4353,7 @@ function handleTeamAttrXlsx(e){
         const s=S.students.find(x=>(id&&x.id===id)||(name&&x.name===name));
         if(!s){skipped++;return;}
         const h=parseInt(row[3]);   if(h>80&&h<250)s.height=h; else if(String(row[3]).trim()==='')s.height=null;
-        const bs=String(row[4]||'').trim().toUpperCase();
-        if(['S','M','L','XL'].includes(bs))s.bodySize=bs; else if(!bs)s.bodySize=null;
-        const ft=parseInt(row[5]);  if(ft>=1&&ft<=5)s.fitness=ft; else if(String(row[5]).trim()==='')s.fitness=null;
+        const ft=parseInt(row[4]);  if(ft>=1&&ft<=5)s.fitness=ft; else if(String(row[4]).trim()==='')s.fitness=null;
         updated++;
       });
       save();
@@ -4309,15 +4369,13 @@ function handleTeamAttrXlsx(e){
 }
 
 function renderTeamTab(){
-  // 체크박스 동기화
   const tc=S.teamCfg;
-  const g=document.getElementById('team-bal-gender');   if(g)g.checked=tc.balGender??true;
-  const h=document.getElementById('team-bal-height');   if(h)h.checked=tc.balHeight??false;
-  const f=document.getElementById('team-bal-fitness');  if(f)f.checked=tc.balFitness??false;
-  const b=document.getElementById('team-bal-bodysize'); if(b)b.checked=tc.balBodySize??false;
-  const cv=document.getElementById('team-count-val');   if(cv)cv.textContent=tc.count;
+  const g=document.getElementById('team-bal-gender');  if(g)g.checked=tc.balGender??true;
+  const h=document.getElementById('team-bal-height');  if(h)h.checked=tc.balHeight??false;
+  const f=document.getElementById('team-bal-fitness'); if(f)f.checked=tc.balFitness??false;
+  const cv=document.getElementById('team-count-val');  if(cv)cv.textContent=tc.count;
   renderTeamAttrTable();
-  renderTeamResults();
+  renderTeamResults(false);
 }
 
 /* ════════════════════════════════════════════════════════
