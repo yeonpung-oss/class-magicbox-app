@@ -448,7 +448,47 @@
       .card { background: #fff !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
       #group-canvas { border: none !important; width: 100% !important; }
     }
-    @media (max-width: 900px) { .seat-tab-layout { grid-template-columns: 1fr; } .pick-layout { grid-template-columns: 1fr; } .order-layout { grid-template-columns: 1fr; } .mgmt-layout { grid-template-columns: 1fr; } }
+    /* ── Team tab ── */
+    .team-layout { display: grid; grid-template-columns: 290px 1fr; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; }
+    .team-layout > .right-stack { overflow-y: auto; min-height: 0; }
+    .team-layout > .card { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+    .team-attr-wrap { overflow-y: auto; flex: 1; min-height: 0; }
+    .team-attr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .team-attr-table th { color: var(--txt2); font-size: 11px; font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: left; position: sticky; top: 0; background: var(--card); z-index: 1; }
+    .team-attr-table td { padding: 4px 6px; border-bottom: 1px solid rgba(28,45,79,.25); vertical-align: middle; }
+    .team-attr-table input[type=number] { width: 58px; background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); padding: 3px 5px; font-size: 12px; width: 100%; }
+    .team-attr-table select.attr-sel { background: rgba(0,0,0,.3); border: 1px solid var(--border); border-radius: 4px; color: var(--txt); padding: 3px 5px; font-size: 12px; width: 100%; }
+    .team-result-area { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; }
+    .team-block { border-radius: 10px; padding: 12px 14px; border: 2px solid; }
+    .team-block-title { font-size: 13px; font-weight: 900; margin-bottom: 8px; }
+    .team-member-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .team-chip { padding: 3px 10px; border-radius: 14px; font-size: 12px; font-weight: 700; border: 1px solid; }
+    @media (max-width: 900px) {
+      .tab-pane.active { overflow-y: auto; }
+      .seat-tab-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
+      .seat-tab-layout > .card:first-child { overflow-x: auto; min-height: 300px; }
+      .seat-tab-layout > .right-stack { height: auto; overflow: visible; }
+      .pick-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
+      .pick-layout > .right-stack { height: auto; }
+      .order-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; align-items: stretch; }
+      .order-left { height: auto; overflow: visible; }
+      .order-canvas-wrap { min-height: 300px; overflow: visible; }
+      .mgmt-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
+      .team-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
+      .team-layout > .card { overflow: visible; }
+      .team-attr-wrap { overflow: visible; max-height: none; }
+    }
+    @media (max-height: 600px) {
+      .tab-pane.active { overflow-y: auto; }
+      .seat-tab-layout { height: auto; min-height: 100%; overflow: visible; }
+      .seat-tab-layout > .right-stack { height: auto; }
+      .pick-layout { height: auto; min-height: 100%; overflow: visible; }
+      .pick-layout > .right-stack { height: auto; }
+      .order-layout { height: auto; min-height: 100%; overflow: visible; }
+      .order-left { height: auto; overflow: visible; }
+      .mgmt-layout { height: auto; min-height: 100%; overflow: visible; }
+      .team-layout { height: auto; min-height: 100%; overflow: visible; }
+    }
     @media (max-width: 768px) { main { padding: 14px; } header { padding: 12px 16px; } .title { font-size: 20px; } .tab-btn { padding: 7px 14px; font-size: 13px; } .seat { width: 62px; height: 56px; } .seat .sn { font-size: 16px; } .seat .s-name { font-size: 12px; } }
 
     /* ── Excel Upload ── */
@@ -682,6 +722,7 @@
     <button class="tab-btn" onclick="switchTab('pick',this)">🎤 발표 뽑기</button>
     <button class="tab-btn" onclick="switchTab('order',this)">🎰 순서 정하기</button>
     <button class="tab-btn" onclick="switchTab('manage',this)">⚙️ 학생 관리</button>
+    <button class="tab-btn" onclick="switchTab('team',this)">⚽ 팀 나누기</button>
   </nav>
   <div class="class-bar">
     <span class="class-bar-lbl">🏫 반</span>
@@ -885,12 +926,12 @@
         </div>
         <p class="hint" id="pb-status" style="margin-top:10px;text-align:center;color:var(--cyan);min-height:18px;"></p>
       </div>
-      <div class="card" style="flex:1;">
-        <div class="card-title" style="justify-content:space-between;">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+        <div class="card-title" style="justify-content:space-between;flex-shrink:0;">
           <span>📋 발표 순서</span>
           <span id="pb-count-badge" class="nbadge">0명</span>
         </div>
-        <div id="pb-result-list" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;"></div>
+        <div id="pb-result-list" style="display:flex;flex-direction:column;gap:5px;margin-top:6px;overflow-y:auto;flex:1;min-height:0;padding-right:2px;"></div>
       </div>
     </div>
     <div class="order-canvas-wrap" id="order-canvas-wrap">
@@ -963,6 +1004,50 @@
   </div>
 </div>
 
+<!-- ══ TAB: 팀 나누기 ══ -->
+<div id="tab-team" class="tab-pane">
+  <div class="team-layout">
+    <!-- 왼쪽: 설정 + 팀 결과 -->
+    <div class="right-stack">
+      <div class="card">
+        <div class="card-title">⚽ 팀 나누기 설정</div>
+        <div class="group-cfg-row">
+          <span>팀 수</span>
+          <div class="num-ctrl">
+            <button onclick="adjTeamCount(-1)">−</button>
+            <span class="num-val" id="team-count-val">2</span>
+            <button onclick="adjTeamCount(1)">＋</button>
+          </div>
+        </div>
+        <hr style="margin:12px 0 10px;">
+        <div style="font-size:12px;font-weight:900;color:var(--txt2);letter-spacing:.5px;margin-bottom:10px;">⚖️ 균형 기준 선택</div>
+        <label class="toggle-row" style="margin-bottom:9px;"><span>성별 균형</span><input type="checkbox" id="team-bal-gender" checked onchange="teamCfgSave()"></label>
+        <label class="toggle-row" style="margin-bottom:9px;"><span>키 균형</span><input type="checkbox" id="team-bal-height" onchange="teamCfgSave()"></label>
+        <label class="toggle-row" style="margin-bottom:9px;"><span>체육 숙달도 균형</span><input type="checkbox" id="team-bal-fitness" onchange="teamCfgSave()"></label>
+        <label class="toggle-row" style="margin-bottom:14px;"><span>신체 사이즈 균형</span><input type="checkbox" id="team-bal-bodysize" onchange="teamCfgSave()"></label>
+        <button class="btn btn-gold btn-full" onclick="generateTeams()">⚽ 팀 나누기 시작</button>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:8px;" id="team-reshuffle-btn" onclick="reshuffleTeams()" style="display:none;">🔀 다시 섞기</button>
+      </div>
+      <div class="card" id="team-result-card" style="display:none;">
+        <div class="card-title" style="justify-content:space-between;">
+          <span>📋 팀 결과</span>
+          <span id="team-count-badge" class="nbadge">0팀</span>
+        </div>
+        <div id="team-result-list" class="team-result-area"></div>
+      </div>
+    </div>
+    <!-- 오른쪽: 학생 체육 정보 입력 -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;flex-shrink:0;">
+        <span>🏃 학생 체육 정보</span>
+        <span class="hint" style="font-weight:400;font-size:11px;">팀 균형 배분에 사용 (선택 사항)</span>
+      </div>
+      <p class="hint" style="margin-bottom:10px;flex-shrink:0;">학생별 키·신체 사이즈·체육 숙달도를 입력하면 더 균등하게 팀을 나눌 수 있어요.</p>
+      <div class="team-attr-wrap" id="team-attr-wrap"></div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <!-- ══ EXCEL PREVIEW MODAL ══ -->
@@ -1000,6 +1085,8 @@ let S = {
   students: [],
   groups: [],
   groupCfg: { count:6, seatsPerGroup:4, shuffleScope:'all', genderBalance:false, separation:[] },
+  teamCfg: { count:2, balGender:true, balHeight:false, balFitness:false, balBodySize:false },
+  teams: [],
   assignment: {},
   seatLocks: {},   // key "gId-sIdx" → 'M'|'F'
   shuffleSpeed: 7,
@@ -1008,7 +1095,7 @@ let S = {
   pkCfg: { animOn:true, soundOn:true, particleOn:true, speed:5, volume:85, instantMode:false },
   shuffleCfg: { bgmOn:true },
   // ── 반(Class) 관리 ──
-  classes: [],       // [{ id, name, students, pick, assignment, seatLocks }]
+  classes: [],       // [{ id, name, students, pick, assignment, seatLocks, teams }]
   activeClassId: null
 };
 
@@ -1025,6 +1112,7 @@ function syncActiveClassData(){
   cls.pick=S.pick;
   cls.assignment=S.assignment;
   cls.seatLocks=S.seatLocks;
+  cls.teams=S.teams;
 }
 
 /* ════════════════════════════════════════════════════════
@@ -1117,6 +1205,7 @@ async function cloudLoad() {
       cls.pick     = S.pick;
       S.assignment = cls.assignment || {};
       S.seatLocks  = cls.seatLocks  || {};
+      S.teams      = cls.teams      || [];
       S.hasResult  = Object.keys(S.assignment).length > 0;
     }
     setSyncStatus('synced', '불러옴');
@@ -1137,6 +1226,7 @@ function save() {
   localStorage.setItem('mb_speed',         S.shuffleSpeed);
   localStorage.setItem('mb_pkCfg',         JSON.stringify(S.pkCfg));
   localStorage.setItem('mb_shuffleCfg',    JSON.stringify(S.shuffleCfg));
+  localStorage.setItem('mb_teamCfg',      JSON.stringify(S.teamCfg));
   cloudSave(); // 클라우드에도 동기화
 }
 function load() {
@@ -1146,6 +1236,7 @@ function load() {
     const sp=localStorage.getItem('mb_speed');      if(sp) S.shuffleSpeed=parseInt(sp)||7;
     const pc=localStorage.getItem('mb_pkCfg');      if(pc) S.pkCfg={...S.pkCfg,...JSON.parse(pc)};
     const sc=localStorage.getItem('mb_shuffleCfg'); if(sc) S.shuffleCfg={...S.shuffleCfg,...JSON.parse(sc)};
+    const tc=localStorage.getItem('mb_teamCfg');    if(tc) S.teamCfg={...S.teamCfg,...JSON.parse(tc)};
 
     const clsRaw=localStorage.getItem('mb_classes');
     if(clsRaw){
@@ -1179,6 +1270,7 @@ function load() {
       cls.pick=S.pick;
       S.assignment=cls.assignment||{};
       S.seatLocks=cls.seatLocks||{};
+      S.teams=cls.teams||[];
       S.hasResult=Object.keys(S.assignment).length>0;
     }
   } catch(e){}
@@ -1203,6 +1295,7 @@ function switchClass(id){
   cls.pick=S.pick;
   S.assignment=cls.assignment||{};
   S.seatLocks=cls.seatLocks||{};
+  S.teams=cls.teams||[];
   S.hasResult=Object.keys(S.assignment).length>0;
   S.editId=null;
   // 픽 탭 상태 초기화
@@ -1307,6 +1400,7 @@ function switchTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active'); btn.classList.add('active');
   if(id==='pick'){initPickTab();} else {stopPickLoop();}
   if(id==='order'){pbActivate();} else {pbDeactivate();}
+  if(id==='team'){renderTeamTab();}
   renderAll();
 }
 
@@ -1318,6 +1412,7 @@ function renderAll(){
   renderSeparationList(); renderSeatLockSummary(); renderPickHistory(); renderPickRoster();
   renderClassSelector();
   const rc=document.getElementById('result-card'); if(rc) rc.style.display=S.hasResult?'':'none';
+  if(document.getElementById('tab-team')?.classList.contains('active')) renderTeamTab();
 }
 function syncGroupUI(){
   const sv=document.getElementById('speed-val'); if(sv)sv.textContent=S.shuffleSpeed;
@@ -1780,7 +1875,21 @@ function computeAssignment(){
   }
 
   applySeparation(asgn);
+  compactGroupSeats(asgn);
   return asgn;
+}
+
+/* 모둠 내 자리를 앞(인덱스 0)부터 빈자리 없이 채움 – 균등 인원 유지하면서 앞좌석부터 배치 */
+function compactGroupSeats(asgn){
+  S.groups.forEach(g=>{
+    const total=g.rows*g.cols;
+    const assigned=[];
+    for(let i=0;i<total;i++){
+      const key=`${g.id}-${i}`;
+      if(asgn[key]!=null){assigned.push(asgn[key]);delete asgn[key];}
+    }
+    assigned.forEach((sid,i)=>{asgn[`${g.id}-${i}`]=sid;});
+  });
 }
 
 function balancedDistribute(pool,groups,asgn){
@@ -3168,7 +3277,7 @@ function renderStudents(){
    STUDENT CRUD
 ════════════════════════════════════════════════════════ */
 function nextId(){return S.students.length===0?1:Math.max(...S.students.map(s=>s.id))+1;}
-function mkStudent(name,gender){return{id:nextId(),name,gender,fixedSeat:null,isPresent:true,pickCount:0};}
+function mkStudent(name,gender){return{id:nextId(),name,gender,fixedSeat:null,isPresent:true,pickCount:0,height:null,bodySize:null,fitness:null};}
 function addStudent(){
   const nameEl=document.getElementById('add-name'), name=nameEl.value.trim();
   if(!name){toast('이름을 입력해 주세요!','var(--red)');nameEl.focus();return;}
@@ -3993,6 +4102,154 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&S.editId!==null&&document.activeElement.id===`en-${S.editId}`)saveEdit(S.editId);
   if(e.key==='Escape'){_p9close();_s7close();}
 });
+
+/* ════════════════════════════════════════════════════════
+   TEAM DIVISION (팀 나누기)
+════════════════════════════════════════════════════════ */
+const TEAM_COLORS=[
+  {bg:'rgba(239,83,80,.13)',border:'rgba(239,83,80,.5)',text:'#ef5350',chip:'rgba(239,83,80,.18)'},
+  {bg:'rgba(79,195,247,.13)',border:'rgba(79,195,247,.5)',text:'#4fc3f7',chip:'rgba(79,195,247,.18)'},
+  {bg:'rgba(255,215,0,.13)',border:'rgba(255,215,0,.5)',text:'#ffd700',chip:'rgba(255,215,0,.18)'},
+  {bg:'rgba(76,175,80,.13)',border:'rgba(76,175,80,.5)',text:'#4caf50',chip:'rgba(76,175,80,.18)'},
+  {bg:'rgba(192,132,252,.13)',border:'rgba(192,132,252,.5)',text:'#c084fc',chip:'rgba(192,132,252,.18)'},
+  {bg:'rgba(251,146,60,.13)',border:'rgba(251,146,60,.5)',text:'#fb923c',chip:'rgba(251,146,60,.18)'},
+  {bg:'rgba(34,211,238,.13)',border:'rgba(34,211,238,.5)',text:'#22d3ee',chip:'rgba(22,211,238,.18)'},
+  {bg:'rgba(244,114,182,.13)',border:'rgba(244,114,182,.5)',text:'#f472b6',chip:'rgba(244,114,182,.18)'},
+];
+
+function adjTeamCount(delta){
+  const n=Math.max(2,Math.min(8,S.teamCfg.count+delta));
+  if(n===S.teamCfg.count)return;
+  S.teamCfg.count=n;
+  document.getElementById('team-count-val').textContent=n;
+  save();
+}
+
+function teamCfgSave(){
+  S.teamCfg.balGender  =document.getElementById('team-bal-gender')?.checked??true;
+  S.teamCfg.balHeight  =document.getElementById('team-bal-height')?.checked??false;
+  S.teamCfg.balFitness =document.getElementById('team-bal-fitness')?.checked??false;
+  S.teamCfg.balBodySize=document.getElementById('team-bal-bodysize')?.checked??false;
+  save();
+}
+
+function saveStudentAttr(id,field,val){
+  const s=S.students.find(x=>x.id===id); if(!s)return;
+  if(field==='height') s.height=val?parseInt(val)||null:null;
+  else if(field==='bodySize') s.bodySize=val||null;
+  else if(field==='fitness') s.fitness=val?parseInt(val)||null:null;
+  save();
+}
+
+function snakeDraft(players,teams){
+  const N=teams.length;
+  players.forEach((p,i)=>{
+    const round=Math.floor(i/N),pos=i%N;
+    const ti=round%2===0?pos:N-1-pos;
+    teams[ti].members.push(p.id);
+  });
+}
+
+function calcScore(s){
+  let score=0;
+  if(S.teamCfg.balHeight&&s.height)   score+=s.height/200;
+  if(S.teamCfg.balFitness&&s.fitness) score+=s.fitness/5;
+  if(S.teamCfg.balBodySize&&s.bodySize){
+    score+={S:0.2,M:0.4,L:0.7,XL:1.0}[s.bodySize]||0;
+  }
+  return score;
+}
+
+function generateTeams(){
+  const pool=fisherYates(S.students.filter(s=>s.isPresent));
+  if(!pool.length){toast('출석 학생이 없습니다!','var(--red)');return;}
+  const N=S.teamCfg.count;
+  const teams=Array.from({length:N},(_,i)=>({id:i+1,members:[]}));
+
+  if(S.teamCfg.balGender){
+    const males=fisherYates(pool.filter(s=>s.gender==='M')).sort((a,b)=>calcScore(b)-calcScore(a));
+    const females=fisherYates(pool.filter(s=>s.gender==='F')).sort((a,b)=>calcScore(b)-calcScore(a));
+    snakeDraft(males,teams);
+    // 여학생은 반대 방향에서 시작해 팀별 균등 분배
+    const fTeams=[...teams].reverse();
+    snakeDraft(females,fTeams);
+  } else {
+    const sorted=fisherYates(pool).sort((a,b)=>calcScore(b)-calcScore(a));
+    snakeDraft(sorted,teams);
+  }
+
+  S.teams=teams;
+  save();
+  renderTeamResults();
+  toast('팀이 나뉘었습니다! 🎉','var(--gold)');
+}
+
+function reshuffleTeams(){
+  generateTeams();
+}
+
+function renderTeamResults(){
+  const card=document.getElementById('team-result-card');
+  const list=document.getElementById('team-result-list');
+  const badge=document.getElementById('team-count-badge');
+  const reshuffleBtn=document.getElementById('team-reshuffle-btn');
+  if(!card||!list)return;
+  if(!S.teams||!S.teams.length){card.style.display='none';if(reshuffleBtn)reshuffleBtn.style.display='none';return;}
+  card.style.display='';
+  if(reshuffleBtn)reshuffleBtn.style.display='';
+  if(badge)badge.textContent=`${S.teams.length}팀`;
+
+  list.innerHTML=S.teams.map((t,i)=>{
+    const col=TEAM_COLORS[i%TEAM_COLORS.length];
+    const members=t.members.map(sid=>{
+      const s=S.students.find(x=>x.id===sid);
+      if(!s)return'';
+      const gColor=s.gender==='M'?'var(--male)':'var(--female)';
+      return`<span class="team-chip" style="background:${col.chip};border-color:${col.border};color:${col.text};">${escHtml(s.name)}<span style="color:${gColor};font-size:10px;margin-left:3px;">${s.gender==='M'?'♂':'♀'}</span></span>`;
+    }).join('');
+    return`<div class="team-block" style="background:${col.bg};border-color:${col.border};">
+      <div class="team-block-title" style="color:${col.text};">${i+1}팀 <span style="font-weight:400;font-size:11px;color:var(--txt2);">(${t.members.length}명)</span></div>
+      <div class="team-member-list">${members}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTeamAttrTable(){
+  const wrap=document.getElementById('team-attr-wrap'); if(!wrap)return;
+  if(!S.students.length){
+    wrap.innerHTML='<div class="empty" style="padding:24px 0;"><div class="em" style="font-size:36px;">🏃</div>학생을 먼저 등록해 주세요.</div>';
+    return;
+  }
+  const rows=S.students.map(s=>{
+    const h=s.height??'';
+    const bs=s.bodySize||'';
+    const ft=s.fitness||'';
+    const bsSel=['','S','M','L','XL'].map(v=>`<option value="${v}"${bs===v?' selected':''}>${v||'미입력'}</option>`).join('');
+    const ftSel=['','1','2','3','4','5'].map(v=>`<option value="${v}"${ft==v?' selected':''}>${v?v+'점':'미입력'}</option>`).join('');
+    const gc=s.gender==='M'?'var(--male)':'var(--female)';
+    return`<tr>
+      <td style="color:var(--txt2);font-size:11px;">${s.id}</td>
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td><span style="color:${gc};font-size:12px;">${s.gender==='M'?'남':'여'}</span></td>
+      <td><input type="number" min="100" max="220" value="${h}" placeholder="cm" style="width:64px;" onchange="saveStudentAttr(${s.id},'height',this.value)"></td>
+      <td><select class="attr-sel" onchange="saveStudentAttr(${s.id},'bodySize',this.value)">${bsSel}</select></td>
+      <td><select class="attr-sel" onchange="saveStudentAttr(${s.id},'fitness',this.value)">${ftSel}</select></td>
+    </tr>`;
+  }).join('');
+  wrap.innerHTML=`<table class="team-attr-table"><thead><tr><th>No.</th><th>이름</th><th>성별</th><th>키(cm)</th><th>신체사이즈</th><th>체육숙달도</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderTeamTab(){
+  // 체크박스 동기화
+  const tc=S.teamCfg;
+  const g=document.getElementById('team-bal-gender');   if(g)g.checked=tc.balGender??true;
+  const h=document.getElementById('team-bal-height');   if(h)h.checked=tc.balHeight??false;
+  const f=document.getElementById('team-bal-fitness');  if(f)f.checked=tc.balFitness??false;
+  const b=document.getElementById('team-bal-bodysize'); if(b)b.checked=tc.balBodySize??false;
+  const cv=document.getElementById('team-count-val');   if(cv)cv.textContent=tc.count;
+  renderTeamAttrTable();
+  renderTeamResults();
+}
 
 /* ════════════════════════════════════════════════════════
    BOOT
