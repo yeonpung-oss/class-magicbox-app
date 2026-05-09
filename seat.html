@@ -91,7 +91,7 @@
 
     /* ── Seat tab ── */
     .seat-tab-layout { display: grid; grid-template-columns: 1fr 270px; grid-template-rows: 1fr; gap: 10px; height: 100%; min-height: 0; overflow: hidden; }
-    .seat-tab-layout > .card:first-child { overflow: auto; display: flex; flex-direction: column; min-height: 0; }
+    .seat-tab-layout > .card:first-child { overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
     .seat-tab-layout > .right-stack { flex-direction: column; overflow-y: auto; min-height: 0; gap: 10px; }
     .classroom-wrapper { display: flex; flex-direction: column; align-items: center; gap: 18px; }
     .teacher-desk {
@@ -185,7 +185,7 @@
 
     /* ── Pick tab (Stage 3) ── */
     .pick-layout { display: grid; grid-template-columns: 1fr 240px; grid-template-rows: 1fr; gap: 12px; align-items: stretch; height: 100%; min-height: 0; overflow: hidden; }
-    .pick-layout > .card:first-child { display: flex; flex-direction: column; overflow: auto; min-height: 0; }
+    .pick-layout > .card:first-child { display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
     .pick-layout > .right-stack { overflow-y: auto; min-height: 0; }
     #capsule-canvas { display: block; cursor: default; border-radius: 8px; align-self: center; }
 
@@ -466,9 +466,10 @@
     @media (max-width: 900px) {
       .tab-pane.active { overflow-y: auto; }
       .seat-tab-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
-      .seat-tab-layout > .card:first-child { overflow-x: auto; min-height: 300px; }
+      .seat-tab-layout > .card:first-child { overflow: hidden; height: 52vh; min-height: 260px; flex-shrink: 0; }
       .seat-tab-layout > .right-stack { height: auto; overflow: visible; }
       .pick-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; }
+      .pick-layout > .card:first-child { overflow: hidden; height: 55vh; min-height: 300px; flex-shrink: 0; }
       .pick-layout > .right-stack { height: auto; }
       .order-layout { grid-template-columns: 1fr; height: auto; min-height: 100%; overflow: visible; align-items: stretch; }
       .order-left { height: auto; overflow: visible; }
@@ -721,8 +722,8 @@
     <button class="tab-btn active" onclick="switchTab('seats',this)">🪑 자리 변경</button>
     <button class="tab-btn" onclick="switchTab('pick',this)">🎤 발표 뽑기</button>
     <button class="tab-btn" onclick="switchTab('order',this)">🎰 순서 정하기</button>
-    <button class="tab-btn" onclick="switchTab('manage',this)">⚙️ 학생 관리</button>
     <button class="tab-btn" onclick="switchTab('team',this)">⚽ 팀 나누기</button>
+    <button class="tab-btn" onclick="switchTab('manage',this)">⚙️ 학생 관리</button>
   </nav>
   <div class="class-bar">
     <span class="class-bar-lbl">🏫 반</span>
@@ -1040,9 +1041,13 @@
     <div class="card">
       <div class="card-title" style="justify-content:space-between;flex-shrink:0;">
         <span>🏃 학생 체육 정보</span>
-        <span class="hint" style="font-weight:400;font-size:11px;">팀 균형 배분에 사용 (선택 사항)</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" onclick="downloadTeamAttrXlsx()" title="엑셀 양식 다운로드">⬇ 양식 다운로드</button>
+          <button class="btn btn-cyan btn-sm" onclick="document.getElementById('team-xl-input').click()" title="엑셀 업로드">📂 엑셀 업로드</button>
+          <input type="file" id="team-xl-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleTeamAttrXlsx(event)">
+        </div>
       </div>
-      <p class="hint" style="margin-bottom:10px;flex-shrink:0;">학생별 키·신체 사이즈·체육 숙달도를 입력하면 더 균등하게 팀을 나눌 수 있어요.</p>
+      <p class="hint" style="margin-bottom:10px;flex-shrink:0;">양식을 다운로드 후 키·신체 사이즈·체육 숙달도를 입력하여 업로드하면 DB에 저장되어 계속 사용할 수 있어요. 직접 입력도 가능합니다.</p>
       <div class="team-attr-wrap" id="team-attr-wrap"></div>
     </div>
   </div>
@@ -1401,6 +1406,7 @@ function switchTab(id,btn){
   if(id==='pick'){initPickTab();} else {stopPickLoop();}
   if(id==='order'){pbActivate();} else {pbDeactivate();}
   if(id==='team'){renderTeamTab();}
+  if(id==='seats'){requestAnimationFrame(()=>{if(gcCtx){resizeGroupCanvas();drawGroupCanvas();}});}
   renderAll();
 }
 
@@ -1484,13 +1490,18 @@ function createDefaultGroups(){
 function resizeGroupCanvas(){
   const canvas=document.getElementById('group-canvas'); if(!canvas||!gcCtx)return;
   const card=canvas.closest('.card'); if(!card)return;
-  // 카드 내 캔버스 가용 공간 계산 (card padding 40px + title 40px + 캔버스 아래 컨트롤 200px)
-  const availW=Math.max(100, card.clientWidth-44);
-  const availH=Math.max(100, card.clientHeight-280);
-  const scaleW=availW/GC.W;
-  const scaleH=availH/GC.H;
-  const scale=Math.min(scaleW, scaleH, 1);
-  // 가로세로 동일 비율로 설정 → 비율 왜곡 없음
+  // 캔버스 외 형제 요소 높이 합산 (resizePickCanvas와 동일 방식)
+  let nonCanvasH=0;
+  for(const child of card.children){
+    if(child===canvas)continue;
+    nonCanvasH+=child.offsetHeight
+      +(parseInt(getComputedStyle(child).marginTop)||0)
+      +(parseInt(getComputedStyle(child).marginBottom)||0);
+  }
+  const cardPadV=(parseInt(getComputedStyle(card).paddingTop)||0)+(parseInt(getComputedStyle(card).paddingBottom)||0);
+  const availW=Math.max(60, card.clientWidth-44);
+  const availH=Math.max(60, card.clientHeight-cardPadV-nonCanvasH-10);
+  const scale=Math.min(availW/GC.W, availH/GC.H, 1);
   canvas.style.width=Math.round(GC.W*scale)+'px';
   canvas.style.height=Math.round(GC.H*scale)+'px';
 }
@@ -4237,6 +4248,64 @@ function renderTeamAttrTable(){
     </tr>`;
   }).join('');
   wrap.innerHTML=`<table class="team-attr-table"><thead><tr><th>No.</th><th>이름</th><th>성별</th><th>키(cm)</th><th>신체사이즈</th><th>체육숙달도</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function downloadTeamAttrXlsx(){
+  if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로딩 중...','var(--txt2)');return;}
+  const wb=XLSX.utils.book_new();
+  const header=['번호','이름','성별','키(cm)','신체사이즈(S/M/L/XL)','체육숙달도(1-5)'];
+  const rows=S.students.map(s=>[
+    s.id, s.name, s.gender==='M'?'남':'여',
+    s.height??'', s.bodySize??'', s.fitness??''
+  ]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  // 열 너비 설정
+  ws['!cols']=[{wch:6},{wch:12},{wch:6},{wch:10},{wch:18},{wch:14}];
+  // 양식 안내 행 (하단)
+  const noteRow=S.students.length+2;
+  XLSX.utils.sheet_add_aoa(ws,[['※ 신체사이즈: S / M / L / XL 중 하나만 입력','','','','','']],{origin:noteRow});
+  XLSX.utils.sheet_add_aoa(ws,[['※ 체육숙달도: 1(매우낮음) ~ 5(매우높음) 숫자만 입력','','','','','']],{origin:noteRow+1});
+  XLSX.utils.book_append_sheet(wb,ws,'체육정보');
+  XLSX.writeFile(wb,'체육정보_입력양식.xlsx');
+  toast('양식 다운로드 완료!','var(--cyan)');
+}
+
+function handleTeamAttrXlsx(e){
+  const file=e.target.files[0]; if(!file)return;
+  e.target.value=''; // 같은 파일 재업로드 허용
+  if(typeof XLSX==='undefined'){toast('엑셀 라이브러리 로딩 중...','var(--txt2)');return;}
+  const reader=new FileReader();
+  reader.onload=(ev)=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!data||data.length<2){toast('데이터가 없습니다!','var(--red)');return;}
+      let updated=0,skipped=0;
+      // 첫 행은 헤더 → slice(1)
+      data.slice(1).forEach(row=>{
+        if(!row||!row[0]&&!row[1])return; // 빈 행 무시
+        const id=parseInt(row[0]);
+        const name=String(row[1]||'').trim();
+        // 번호 또는 이름으로 학생 탐색
+        const s=S.students.find(x=>(id&&x.id===id)||(name&&x.name===name));
+        if(!s){skipped++;return;}
+        const h=parseInt(row[3]);   if(h>80&&h<250)s.height=h; else if(String(row[3]).trim()==='')s.height=null;
+        const bs=String(row[4]||'').trim().toUpperCase();
+        if(['S','M','L','XL'].includes(bs))s.bodySize=bs; else if(!bs)s.bodySize=null;
+        const ft=parseInt(row[5]);  if(ft>=1&&ft<=5)s.fitness=ft; else if(String(row[5]).trim()==='')s.fitness=null;
+        updated++;
+      });
+      save();
+      renderTeamTab();
+      const msg=skipped>0?`${updated}명 저장 완료 (${skipped}명 미매칭)`:` ${updated}명 저장 완료!`;
+      toast(msg,'var(--gold)');
+    }catch(err){
+      console.error(err);
+      toast('파일 읽기 오류! xlsx/xls/csv 파일인지 확인해 주세요.','var(--red)');
+    }
+  };
+  reader.readAsBinaryString(file);
 }
 
 function renderTeamTab(){
